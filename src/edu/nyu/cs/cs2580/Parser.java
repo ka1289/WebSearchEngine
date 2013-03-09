@@ -22,7 +22,8 @@ public class Parser {
 			// System.out.println(source.getTextExtractor().toString());
 			temp.append(source.getTextExtractor().toString());
 		}
-
+		br.close();
+		fr.close();
 		return temp.toString();
 	}
 }
