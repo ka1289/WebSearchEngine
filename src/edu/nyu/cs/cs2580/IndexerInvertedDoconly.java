@@ -2,6 +2,16 @@ package edu.nyu.cs.cs2580;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.util.Version;
 
 import edu.nyu.cs.cs2580.SearchEngine.Options;
 
@@ -15,6 +25,19 @@ public class IndexerInvertedDoconly extends Indexer {
 		System.out.println("Using Indexer: " + this.getClass().getSimpleName());
 	}
 
+	private List<String> tokenize(TokenStream stream) throws IOException {
+		List<String> words = new ArrayList<String>();
+
+		CharTermAttribute attr = stream.addAttribute(CharTermAttribute.class);
+		while (stream.incrementToken()) {
+			words.add(attr.toString());
+		}
+		
+		stream.end();
+		stream.close();
+		return words;
+	}
+
 	@Override
 	public void constructIndex() throws IOException {
 		File corpusDir = new File(_options._corpusPrefix);
@@ -26,10 +49,14 @@ public class IndexerInvertedDoconly extends Indexer {
 
 		for (File eachFile : listOfFiles) {
 			i = 0;
-			
+
 			while (i < noOfFiles / 5) {
 				String newFile = Parser.parse(eachFile);
-				
+				Analyzer analyzer = new EnglishAnalyzer(Version.LUCENE_30, new HashSet<String>());
+				List<String> words = tokenize(analyzer.tokenStream("", new StringReader(newFile)));
+				for(String word : words) {
+					String stemmed = Stemmer.execute(word);
+				}
 				i++;
 			}
 		}

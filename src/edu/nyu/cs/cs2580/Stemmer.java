@@ -1,4 +1,5 @@
 package edu.nyu.cs.cs2580;
+
 /*
 
  Porter stemmer in Java. The original paper is in
@@ -73,8 +74,8 @@ class Stemmer {
 	}
 
 	/**
-	 * Adds wLen characters to the word being stemmed contained in a portion of a
-	 * char[] array. This is like repeated calls of add(char ch), but faster.
+	 * Adds wLen characters to the word being stemmed contained in a portion of
+	 * a char[] array. This is like repeated calls of add(char ch), but faster.
 	 */
 
 	public void add(char[] w, int wLen) {
@@ -192,9 +193,9 @@ class Stemmer {
 	}
 
 	/*
-	 * cvc(i) is true <=> i-2,i-1,i has the form consonant - vowel - consonant and
-	 * also if the second c is not w,x or y. this is used when trying to restore
-	 * an e at the end of a short word. e.g.
+	 * cvc(i) is true <=> i-2,i-1,i has the form consonant - vowel - consonant
+	 * and also if the second c is not w,x or y. this is used when trying to
+	 * restore an e at the end of a short word. e.g.
 	 * 
 	 * cav(e), lov(e), hop(e), crim(e), but snow, box, tray.
 	 */
@@ -223,7 +224,8 @@ class Stemmer {
 	}
 
 	/*
-	 * setto(s) sets (j+1),...k to the characters in the string s, readjusting k.
+	 * setto(s) sets (j+1),...k to the characters in the string s, readjusting
+	 * k.
 	 */
 
 	private final void setto(String s) {
@@ -288,9 +290,9 @@ class Stemmer {
 
 	/**
 	 * Stem the word placed into the Stemmer buffer through calls to add().
-	 * Returns true if the stemming process resulted in a word different from the
-	 * input. You can retrieve the result with getResultLength()/getResultBuffer()
-	 * or toString().
+	 * Returns true if the stemming process resulted in a word different from
+	 * the input. You can retrieve the result with
+	 * getResultLength()/getResultBuffer() or toString().
 	 */
 	public void stem() {
 		k = i - 1;
@@ -302,13 +304,26 @@ class Stemmer {
 	}
 
 	/**
-	 * Test program for demonstrating the Stemmer. It reads text from a a list of
-	 * files, stems each word, and writes the result to standard output. Note that
-	 * the word stemmed is expected to be in lower case: forcing lower case must
-	 * be done outside the Stemmer class. Usage: Stemmer file-name file-name ...
+	 * Test program for demonstrating the Stemmer. It reads text from a a list
+	 * of files, stems each word, and writes the result to standard output. Note
+	 * that the word stemmed is expected to be in lower case: forcing lower case
+	 * must be done outside the Stemmer class. Usage: Stemmer file-name
+	 * file-name ...
 	 */
-	
-	
+
+	public static String execute(String word) {
+		Stemmer s = new Stemmer();
+		s.b = word.toCharArray();
+		s.stem();
+
+		String u;
+
+		/* and now, to test toString() : */
+		u = s.toString();
+
+		return u;
+	}
+
 	public static void execute(String[] args) {
 		char[] w = new char[501];
 		Stemmer s = new Stemmer();
@@ -317,8 +332,7 @@ class Stemmer {
 				FileInputStream in = new FileInputStream(args[i]);
 
 				try {
-					while (true)
-					{
+					while (true) {
 						int ch = in.read();
 						if (Character.isLetter((char) ch)) {
 							int j = 0;
@@ -329,6 +343,7 @@ class Stemmer {
 									j++;
 								ch = in.read();
 								if (!Character.isLetter((char) ch)) {
+									
 									/* to test add(char ch) */
 									for (int c = 0; c < j; c++)
 										s.add(w[c]);
@@ -337,20 +352,23 @@ class Stemmer {
 									/* s.add(w, j); */
 
 									s.stem();
-									{
-										String u;
 
-										/* and now, to test toString() : */
-										u = s.toString();
+									String u;
 
-										/* to test getResultBuffer(), getResultLength() : */
-										/*
-										 * u = new String(s.getResultBuffer(), 0,
-										 * s.getResultLength());
-										 */
+									/* and now, to test toString() : */
+									u = s.toString();
 
-										System.out.print(u);
-									}
+									/*
+									 * to test getResultBuffer(),
+									 * getResultLength() :
+									 */
+									/*
+									 * u = new String(s.getResultBuffer(), 0,
+									 * s.getResultLength());
+									 */
+
+									System.out.print(u);
+
 									break;
 								}
 							}
