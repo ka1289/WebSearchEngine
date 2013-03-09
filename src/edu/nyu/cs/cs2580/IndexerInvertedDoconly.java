@@ -1,12 +1,13 @@
 package edu.nyu.cs.cs2580;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -57,7 +58,7 @@ public class IndexerInvertedDoconly extends Indexer {
 		int index = 1;
 		initializeMap();
 		for (File eachFile : listOfFiles) {
-			if (i >= noOfFiles / 5) {
+			if (i >= noOfFiles/5) {
 				serialize();
 				mapOfMaps = null;
 				i = 0;
@@ -67,7 +68,12 @@ public class IndexerInvertedDoconly extends Indexer {
 			index++;
 			i++;
 		}
-		
+
+		if (i <= noOfFiles) {
+			serialize();
+			mapOfMaps = null;
+		}
+
 		try {
 			merge();
 		} catch (ClassNotFoundException e) {
@@ -78,37 +84,55 @@ public class IndexerInvertedDoconly extends Indexer {
 	private void merge() throws FileNotFoundException, IOException, ClassNotFoundException {
 		File indexDir = new File(_options._indexPrefix);
 		File[] indexedFiles = indexDir.listFiles();
-		
-		for(File file : indexedFiles) {
-			AppendingObjectOutputStream oos = new AppendingObjectOutputStream(new FileOutputStream(file.getAbsoluteFile(), true));
-			oos.writeObject(new NullObject());
-			oos.close();
-		}
+
 		indexedFiles = indexDir.listFiles();
-		for(File file : indexedFiles) {
-			AppendingObjectInputStream ois = new AppendingObjectInputStream(new FileInputStream(file.getAbsoluteFile()));
-			Object o;
-			while (! ( ( o = ois.readObject()) instanceof NullObject) ) {
-				Map<String, WordAttribute> map = (Map<String, WordAttribute>) o;
-				for (Map.Entry<String, WordAttribute> entry : map.entrySet()) {
-					String key = entry.getKey();
-					WordAttribute wa = entry.getValue();
-					if (wordMap.containsKey(key)) {
-						WordAttribute wa1 = wordMap.get(key);
-						wa1.setFreq(wa1.getFreq() + wa.getFreq());
-						wa1.getList().addAll(wa.getList());
-					} else {
-						wordMap.put(key, wa);
+		for (File file : indexedFiles) {
+			if (file.getName().equals(".DS_Store"))
+				continue;
+			BufferedReader ois = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+			String o;
+			while (((o = ois.readLine()) != null)) {
+				String[] map = o.split("\t");
+				String key = map[0];
+				WordAttribute wa = new WordAttribute();
+				if (wordMap.containsKey(key)) {
+					WordAttribute wa1 = wordMap.get(key);
+					wa1.setFreq(Integer.parseInt(map[map.length - 1]) + wa1.getFreq());
+					List<Integer> tmpList = new ArrayList<Integer>();
+					for (int i = 1; i < map.length - 1; i++) {
+						tmpList.add(Integer.parseInt(map[i]));
 					}
+					wa1.getList().addAll(tmpList);
+					tmpList = null;
+				} else {
+					wa.setFreq(Integer.parseInt(map[map.length - 1]));
+					List<Integer> tmpList = new ArrayList<Integer>();
+					for (int i = 1; i < map.length - 1; i++) {
+						tmpList.add(Integer.parseInt(map[i]));
+					}
+					wa.setList(tmpList);
+					tmpList = null;
+					wordMap.put(key, wa);
 				}
 			}
-			
+
 			String s = file.getName().split("_")[0];
-			AppendingObjectOutputStream aoos = new AppendingObjectOutputStream(new FileOutputStream(_options._indexPrefix + "/" + s + ".ser", true));
-			aoos.writeObject(wordMap);
-			aoos.close();
+
+			BufferedWriter oos = new BufferedWriter(new FileWriter(_options._indexPrefix + "/" + s + ".csv", true));
+
+			for (String si : wordMap.keySet()) {
+				oos.write(si + "\t");
+				WordAttribute wa = wordMap.get(si);
+
+				for (int i : wa.getList()) {
+					oos.write(i + "\t");
+				}
+				oos.write(wa.getFreq() + "");
+				oos.newLine();
+			}
 			wordMap.clear();
-			ois.close();
+			oos.close();
+			file.delete();
 		}
 	}
 
@@ -116,8 +140,19 @@ public class IndexerInvertedDoconly extends Indexer {
 		for (String firstLetter : mapOfMaps.keySet()) {
 			StringBuilder file = new StringBuilder(_options._indexPrefix).append("/").append(firstLetter)
 					.append("_tmp.csv");
-			AppendingObjectOutputStream oos = new AppendingObjectOutputStream(new FileOutputStream(file.toString(), true));
-			oos.writeObject(mapOfMaps.get(firstLetter));
+			BufferedWriter oos = new BufferedWriter(new FileWriter(file.toString(), true));
+
+			HashMap<String, WordAttribute> attr = mapOfMaps.get(firstLetter);
+			for (String s : attr.keySet()) {
+				oos.write(s + "\t");
+				WordAttribute wa = attr.get(s);
+
+				for (int i : wa.getList()) {
+					oos.write(i + "\t");
+				}
+				oos.write(wa.getFreq() + "");
+				oos.newLine();
+			}
 			oos.close();
 		}
 	}
@@ -133,7 +168,7 @@ public class IndexerInvertedDoconly extends Indexer {
 		Analyzer analyzer = new EnglishAnalyzer(Version.LUCENE_30, new HashSet<String>());
 		List<String> words = tokenize(analyzer.tokenStream("", new StringReader(newFile)));
 		for (String word : words) {
-			String stemmed = Stemmer.execute(word).trim();
+			String stemmed = Stemmer.stemAWord(word);
 			if (stemmed.matches("[A-Za-z0-9\\p{Punct}\\s]+")) {
 				String first = stemmed.substring(0, 1);
 				HashMap<String, WordAttribute> currCharMap = mapOfMaps.get(first);
@@ -164,12 +199,14 @@ public class IndexerInvertedDoconly extends Indexer {
 
 		for (int j = 0; j < 26; j++) {
 			HashMap<String, WordAttribute> tmp = new HashMap<String, WordAttribute>();
-			mapOfMaps.put('a' + j + "", tmp);
+			String name = Character.toString((char) (j + 'a'));
+			mapOfMaps.put(name, tmp);
 		}
 
 		for (int j = 0; j < 10; j++) {
 			HashMap<String, WordAttribute> tmp = new HashMap<String, WordAttribute>();
-			mapOfMaps.put('0' + j + "", tmp);
+			String name = Character.toString((char) (j + '0'));
+			mapOfMaps.put(name, tmp);
 		}
 
 	}
