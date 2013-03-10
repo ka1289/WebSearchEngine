@@ -2,18 +2,18 @@ package edu.nyu.cs.cs2580;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.LinkedHashMap;
 
 public class WordAttribute_WordOccurrences {
 
-	private Map<Integer, ArrayList<Integer>> list = new HashMap<Integer, ArrayList<Integer>>();
+	private LinkedHashMap<Integer, ArrayList<Integer>> list = new LinkedHashMap<Integer, ArrayList<Integer>>();
 	private long freq;
 
-	public Map<Integer, ArrayList<Integer>> getList() {
+	public HashMap<Integer, ArrayList<Integer>> getList() {
 		return list;
 	}
 
-	public void setList(HashMap<Integer, ArrayList<Integer>> list) {
+	public void setList(LinkedHashMap<Integer, ArrayList<Integer>> list) {
 		this.list = list;
 	}
 
