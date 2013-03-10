@@ -235,7 +235,98 @@ public class IndexerInvertedDoconly extends Indexer {
 	 */
 	@Override
 	public Document nextDoc(Query query, int docid) {
+		query.processQuery();
+		
+		//if docid is -1 then make docid=0
+		if(docid == -1) {
+			docid = 0;
+		}
+		
+		//Pick each word in the query and extract the list of the nextDoc List
+		//Now pick a docid from a word and run a binary search in all the other 
+		// docID list of other words.
+		
+		//First find out the smallest list among the list of all the words		
+		String smallestListWord = findWordWithSmallestList();			
+		
+		//Now take a next docId form the list of the smallestListWord
+		WordAttribute smallestWordAttribute = wordMap.get(smallestListWord);
+		List<Integer> smallestList = smallestWordAttribute.getList();
+		
+		//Find the position of docid in the smallestListWord
+		int position = searchForIdInWordList(smallestListWord, docid);
+		
+		//Now iterate the list linearly and apply binary search in all the other words
+		for(int i=position+1;i<smallestList.size();i++) {
+			int currentDocId = smallestList.get(i);
+			// Now loop through the other words and apply binary search on all
+			boolean value = isPresentInAll(currentDocId,smallestListWord,query);
+			if(value == true) {
+				return docMap.get(i);
+			}
+		}				
 		return null;
+	}
+	
+	private boolean isPresentInAll(int docid, String originalWord,Query query) {
+	  
+		for(String str : query._tokens) {
+			if(str == originalWord) { continue;					
+			}
+			else if (searchForIdInWordList(str, docid) != -1) {
+				continue;
+			}
+			else {
+				return false;
+			}
+		}
+		return true;
+  }
+
+	/**
+	 * @param smallestList
+	 * @param docid
+	 * @return the index where the docid is present in the list
+	 */
+	private int searchForIdInWordList(String word, int docid) {
+		//Applying bInary Search to search for the docid in the list of the word
+		WordAttribute currentWordAttribute = wordMap.get(word);
+		List<Integer> smallestList = currentWordAttribute.getList();
+		int low = 0;
+		int high = smallestList.size();
+		
+		while( low <= high ) {
+			// Calculate the middle of the array via the bitwise operator for 
+			// unsigned right-shift. This the same as writing ( low + high ) / 2^1
+			// only faster. In addition, it shifts a zero into the leftmost position.
+			int middle = (low + high) >> 1;
+ 
+			if(smallestList.get(middle) > docid) {
+				// Continue searching the lower part of the array
+				high = middle - 1;
+			} else if(smallestList.get(middle) < docid) {
+				// Continue searching the upper part of the array
+				low = middle + 1;
+			} else {
+				// We've found the array index of the value
+				return middle;
+			}
+		}
+		return -1;		
+  }
+
+	private String findWordWithSmallestList() {
+		int minListLength = 0;
+		String smallestListWord = "";
+		for(Map.Entry<String, WordAttribute> currentEntry : wordMap.entrySet()) {
+			WordAttribute currentWordAttribute = currentEntry.getValue();
+			List<Integer> currentList = currentWordAttribute.getList();
+			if(minListLength > currentList.size()) {
+				minListLength = currentList.size();
+				smallestListWord = currentEntry.getKey();
+			}
+		}
+		return smallestListWord;
 	}
 
 	@Override
