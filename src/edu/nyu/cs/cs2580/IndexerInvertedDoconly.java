@@ -59,7 +59,7 @@ public class IndexerInvertedDoconly extends Indexer {
 		int index = 1;
 		initializeMap();
 		for (File eachFile : listOfFiles) {
-			if (i >= noOfFiles/5) {
+			if (i >= noOfFiles / 5) {
 				serialize();
 				mapOfMaps = null;
 				i = 0;
@@ -138,13 +138,14 @@ public class IndexerInvertedDoconly extends Indexer {
 	}
 
 	private void serialize() throws IOException {
-		
+
 		StringBuilder builder = new StringBuilder(_options._indexPrefix).append("/").append("doc_map.ser");
-		AppendingObjectOutputStream aoos = new AppendingObjectOutputStream(new FileOutputStream(builder.toString(), true));
+		AppendingObjectOutputStream aoos = new AppendingObjectOutputStream(new FileOutputStream(builder.toString(),
+				true));
 		aoos.writeObject(docMap);
 		aoos.close();
 		docMap.clear();
-		
+
 		for (String firstLetter : mapOfMaps.keySet()) {
 			StringBuilder file = new StringBuilder(_options._indexPrefix).append("/").append(firstLetter)
 					.append("_tmp.csv");
@@ -221,6 +222,7 @@ public class IndexerInvertedDoconly extends Indexer {
 
 	@Override
 	public void loadIndex() throws IOException, ClassNotFoundException {
+		
 	}
 
 	@Override
@@ -238,6 +240,7 @@ public class IndexerInvertedDoconly extends Indexer {
 
 	@Override
 	public int corpusDocFrequencyByTerm(String term) {
+
 		return 0;
 	}
 
