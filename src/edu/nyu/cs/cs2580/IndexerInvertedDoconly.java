@@ -133,6 +133,7 @@ public class IndexerInvertedDoconly extends Indexer {
 			}
 			wordMap.clear();
 			oos.close();
+			ois.close();
 			file.delete();
 		}
 	}
@@ -190,11 +191,13 @@ public class IndexerInvertedDoconly extends Indexer {
 					long tmpFreq = tmpAttr.getFreq();
 					tmpFreq++;
 					tmpAttr.setFreq(tmpFreq);
+					currCharMap.put(stemmed, tmpAttr);
 				} else {
 					WordAttribute tmpAttr = new WordAttribute();
 					List<Integer> tmpList = new ArrayList<Integer>();
 					tmpList.add(index);
 					tmpAttr.setFreq(1);
+					tmpAttr.getList().addAll(tmpList);
 					currCharMap.put(stemmed, tmpAttr);
 				}
 			}
