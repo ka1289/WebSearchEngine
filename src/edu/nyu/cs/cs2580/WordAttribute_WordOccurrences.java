@@ -2,10 +2,11 @@ package edu.nyu.cs.cs2580;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class WordAttribute_WordOccurrences {
-
+	//Maps the docid to the positions at which the word occurred
 	private Map<Integer, ArrayList<Integer>> list = new HashMap<Integer, ArrayList<Integer>>();
 	private long freq;
 

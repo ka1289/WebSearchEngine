@@ -37,6 +37,12 @@ public class IndexerInvertedOccurrence extends Indexer {
 	 */
 	@Override
 	public Document nextDoc(Query query, int docid) {
+		QueryPhrase queryPhrase = new QueryPhrase(query._query);
+		queryPhrase.processQuery();
+		
+		
+		
+		
 		return null;
 	}
 
