@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -69,7 +70,7 @@ public class IndexerInvertedDoconly extends Indexer {
 			i++;
 		}
 
-		if (i <= noOfFiles) {
+		if (noOfFiles <= 5 && i <= noOfFiles) {
 			serialize();
 			mapOfMaps = null;
 		}
@@ -87,28 +88,28 @@ public class IndexerInvertedDoconly extends Indexer {
 
 		indexedFiles = indexDir.listFiles();
 		for (File file : indexedFiles) {
-			if (file.getName().equals(".DS_Store"))
+			if (file.getName().equals(".DS_Store") || file.getName().equals("doc_map.ser"))
 				continue;
 			BufferedReader ois = new BufferedReader(new FileReader(file.getAbsoluteFile()));
 			String o;
 			while (((o = ois.readLine()) != null)) {
-				String[] map = o.split("\t");
-				String key = map[0];
+				String[] eachLine = o.split("\t");
+				String key = eachLine[0];
 				WordAttribute wa = new WordAttribute();
 				if (wordMap.containsKey(key)) {
 					WordAttribute wa1 = wordMap.get(key);
-					wa1.setFreq(Integer.parseInt(map[map.length - 1]) + wa1.getFreq());
+					wa1.setFreq(Integer.parseInt(eachLine[eachLine.length - 1]) + wa1.getFreq());
 					List<Integer> tmpList = new ArrayList<Integer>();
-					for (int i = 1; i < map.length - 1; i++) {
-						tmpList.add(Integer.parseInt(map[i]));
+					for (int i = 1; i < eachLine.length - 1; i++) {
+						tmpList.add(Integer.parseInt(eachLine[i]));
 					}
 					wa1.getList().addAll(tmpList);
 					tmpList = null;
 				} else {
-					wa.setFreq(Integer.parseInt(map[map.length - 1]));
+					wa.setFreq(Integer.parseInt(eachLine[eachLine.length - 1]));
 					List<Integer> tmpList = new ArrayList<Integer>();
-					for (int i = 1; i < map.length - 1; i++) {
-						tmpList.add(Integer.parseInt(map[i]));
+					for (int i = 1; i < eachLine.length - 1; i++) {
+						tmpList.add(Integer.parseInt(eachLine[i]));
 					}
 					wa.setList(tmpList);
 					tmpList = null;
@@ -137,6 +138,13 @@ public class IndexerInvertedDoconly extends Indexer {
 	}
 
 	private void serialize() throws IOException {
+		
+		StringBuilder builder = new StringBuilder(_options._indexPrefix).append("/").append("doc_map.ser");
+		AppendingObjectOutputStream aoos = new AppendingObjectOutputStream(new FileOutputStream(builder.toString(), true));
+		aoos.writeObject(docMap);
+		aoos.close();
+		docMap.clear();
+		
 		for (String firstLetter : mapOfMaps.keySet()) {
 			StringBuilder file = new StringBuilder(_options._indexPrefix).append("/").append(firstLetter)
 					.append("_tmp.csv");
