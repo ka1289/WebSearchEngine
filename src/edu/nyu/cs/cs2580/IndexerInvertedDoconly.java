@@ -10,13 +10,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.io.comparator.SizeFileComparator;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
@@ -247,7 +246,7 @@ public class IndexerInvertedDoconly extends Indexer {
 		for (File file : indexedFiles) {
 			if (file.getName().equals(".DS_Store"))
 				continue;
-			
+
 			if(file.getName().equals("doc_map.csv")) {
 				loadDocMap(file);
 				continue;
@@ -314,7 +313,12 @@ public class IndexerInvertedDoconly extends Indexer {
 	@Override
 	public Document getDoc(int docid) {
 		if(!checkInCache(docid)) {
-			
+			try {
+				loadDocInCache(docid);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		return null;
 	}
@@ -323,11 +327,54 @@ public class IndexerInvertedDoconly extends Indexer {
 		return docMap.containsKey(docid);
 	}
 	
-	private void loadDocInCache(int did) {
+	private void loadDocInCache(int did) throws IOException {
 		if(docMap.containsKey(did))
 			return;
 		
+		Runtime runtime = Runtime.getRuntime();
+		if(runtime.freeMemory() < 10000) {
+			Iterator<Integer> iter = docMap.keySet().iterator();
+			int temp = iter.next();
+			docMap.remove(temp);
+		}
 		
+		List<String> commands = new ArrayList<String>();
+		commands.add("/bin/bash");
+		commands.add("-c");
+		commands.add("grep $'^" + did + "\t' " + _options._indexPrefix + "/" + "doc_map.csv");
+		ProcessBuilder pb = new ProcessBuilder(commands);
+		Process p = pb.start();
+		BufferedReader ois = new BufferedReader(new InputStreamReader(p.getInputStream()));
+		
+		String o;
+		while (((o = ois.readLine()) != null)) {
+			String[] eachLine = o.split("\t");
+			int docid = Integer.parseInt(eachLine[0]);
+			if(docid > totalNoOfFiles/5)
+				break;
+			DocumentIndexed wa = new DocumentIndexed(docid);
+			String title = eachLine[1];
+			String url = eachLine[2];
+			
+			int i = 3;
+			HashMap<String, Integer> wordFreq = new HashMap<String, Integer>();
+			
+			while(i < eachLine.length-1) {
+				String word = eachLine[i];
+				i++;
+				int freq = Integer.parseInt(eachLine[i]);
+				wordFreq.put(word, freq);
+			}
+			int totalWords = Integer.parseInt(eachLine[eachLine.length-1]);
+			
+			wa.setTitle(title);
+			wa.setUrl(url);
+			wa.setWordFrequency(wordFreq);
+			wa.setTotalWords(totalWords);
+			
+			docMap.put(docid, wa);
+		}
+		ois.close();
 	}
 
 	/**
@@ -373,6 +420,7 @@ public class IndexerInvertedDoconly extends Indexer {
 
 		} catch (IOException e) {
 			// TODO
+			e.printStackTrace();
 		}
 		return null;
 	}
@@ -552,6 +600,7 @@ public class IndexerInvertedDoconly extends Indexer {
 					return 0;
 			} catch (IOException e) {
 				// TODO
+				e.printStackTrace();
 			}
 		}
 		return wordMap.get(term).getList().size();
@@ -567,6 +616,7 @@ public class IndexerInvertedDoconly extends Indexer {
 					return 0;
 			} catch (IOException e) {
 				// TODO
+				e.printStackTrace();
 			}
 		}
 		return (int) wordMap.get(term).getFreq();
