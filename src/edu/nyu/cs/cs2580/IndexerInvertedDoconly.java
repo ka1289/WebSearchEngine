@@ -183,11 +183,27 @@ public class IndexerInvertedDoconly extends Indexer {
 		docIndexed.setUrl(eachFile.getPath());
 
 		String newFile = Parser.parse(eachFile);
-		Analyzer analyzer = new EnglishAnalyzer(Version.LUCENE_30, new HashSet<String>());
+		HashSet<String> stopWords = new HashSet<String>();
+		stopWords.add("the");
+		stopWords.add("and");
+		stopWords.add("or");
+		stopWords.add("an");
+		stopWords.add("if");
+		stopWords.add("but");
+		stopWords.add("the");
+		stopWords.add("is");
+		stopWords.add("an");
+		stopWords.add("he");
+		stopWords.add("she");
+		stopWords.add("be");
+		stopWords.add("me");
+		stopWords.add("has");
+		stopWords.add("http");
+		Analyzer analyzer = new EnglishAnalyzer(Version.LUCENE_30, stopWords);
 		List<String> words = tokenize(analyzer.tokenStream("", new StringReader(newFile)));
 		for (String word : words) {
 			String stemmed = Stemmer.stemAWord(word);
-			if (stemmed.matches("[A-Za-z0-9\\p{Punct}\\s]+")) {
+			if (stemmed.matches("[A-Za-z0-9\\p{Punct}\\s]+")  && stemmed.length() > 1) {
 				String first = stemmed.substring(0, 1);
 				HashMap<String, WordAttribute> currCharMap = mapOfMaps.get(first);
 				if (currCharMap.containsKey(stemmed)) {
