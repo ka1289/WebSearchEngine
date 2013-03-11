@@ -153,13 +153,13 @@ public class IndexerInvertedDoconly extends Indexer {
 				aoos.write(s + "\t" + wordFreq.get(s) + "\t");
 			}
 			aoos.write(docIndexed.getTotalWords() + "");
+			aoos.newLine();
 		}
 		aoos.close();
 		docMap.clear();
 
 		for (String firstLetter : mapOfMaps.keySet()) {
-			StringBuilder file = new StringBuilder(_options._indexPrefix).append("/").append(firstLetter)
-					.append("_tmp.csv");
+			StringBuilder file = new StringBuilder(_options._indexPrefix).append("/").append(firstLetter).append("_tmp.csv");
 			BufferedWriter oos = new BufferedWriter(new FileWriter(file.toString(), true));
 
 			HashMap<String, WordAttribute> attr = mapOfMaps.get(firstLetter);
@@ -239,80 +239,92 @@ public class IndexerInvertedDoconly extends Indexer {
 	@Override
 	public void loadIndex() throws IOException, ClassNotFoundException {
 		wordMap = new HashMap<String, WordAttribute>();
-		
+
 		File indexDir = new File(_options._indexPrefix);
 		File[] indexedFiles = indexDir.listFiles();
+		int i = 0;
 
 		for (File file : indexedFiles) {
 			if (file.getName().equals(".DS_Store"))
 				continue;
 
-			if(file.getName().equals("doc_map.csv")) {
+			if (file.getName().equals("doc_map.csv")) {
 				loadDocMap(file);
 				continue;
 			}
-			
-			if(file.getName().equals("f.csv"))
-				break;
-			
-			BufferedReader ois = new BufferedReader(new FileReader(file.getAbsoluteFile()));
-			String o;
-			while (((o = ois.readLine()) != null)) {
-				String[] eachLine = o.split("\t");
-				String key = eachLine[0];
-				WordAttribute wa = new WordAttribute();
-				// get the frequency for the words
-				wa.setFreq(Integer.parseInt(eachLine[eachLine.length - 1]));
-				List<Integer> tmpList = new ArrayList<Integer>();
-				for (int i = 1; i < eachLine.length - 1; i++) {
-					tmpList.add(Integer.parseInt(eachLine[i]));
-				}
-				wa.setList(tmpList);
-				tmpList = null;
-				wordMap.put(key, wa);
+
+			if (i < 7 && !file.getName().equals("doc_map.csv") && !file.getName().equals(".DS_Store")){
+				loadFile(file);
 			}
-			ois.close();
+
+			i++;
 		}
 	}
 
-	private void loadDocMap(File file) throws NumberFormatException, IOException {
-		docMap = new HashMap<Integer, DocumentIndexed>();
-		
+	private void loadFile(File file) throws NumberFormatException, IOException {
+		// TODO Auto-generated method stub
+
 		BufferedReader ois = new BufferedReader(new FileReader(file.getAbsoluteFile()));
 		String o;
 		while (((o = ois.readLine()) != null)) {
 			String[] eachLine = o.split("\t");
+			String key = eachLine[0];
+			WordAttribute wa = new WordAttribute();
+			// get the frequency for the words
+			wa.setFreq(Integer.parseInt(eachLine[eachLine.length - 1]));
+			List<Integer> tmpList = new ArrayList<Integer>();
+			for (int i = 1; i < eachLine.length - 1; i++) {
+				tmpList.add(Integer.parseInt(eachLine[i]));
+			}
+			wa.setList(tmpList);
+			tmpList = null;
+			wordMap.put(key, wa);
+		}
+		ois.close();
+	}
+
+	private void loadDocMap(File file) throws NumberFormatException, IOException {
+		docMap = new HashMap<Integer, DocumentIndexed>();
+
+		BufferedReader ois = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+		String o;
+		int h = 0;
+		while (((o = ois.readLine()) != null)) {
+			String[] eachLine = o.split("\t");
 			int did = Integer.parseInt(eachLine[0]);
-			if(did > totalNoOfFiles/5)
+			if (h > 2000) {
 				break;
+			}
 			DocumentIndexed wa = new DocumentIndexed(did);
 			String title = eachLine[1];
 			String url = eachLine[2];
-			
+
 			int i = 3;
 			HashMap<String, Integer> wordFreq = new HashMap<String, Integer>();
-			
-			while(i < eachLine.length-1) {
+
+			while (i < eachLine.length - 1) {
 				String word = eachLine[i];
 				i++;
 				int freq = Integer.parseInt(eachLine[i]);
 				wordFreq.put(word, freq);
+				i++;
 			}
-			int totalWords = Integer.parseInt(eachLine[eachLine.length-1]);
-			
+			long totalWords = Integer.parseInt(eachLine[eachLine.length - 1]);
+
 			wa.setTitle(title);
 			wa.setUrl(url);
 			wa.setWordFrequency(wordFreq);
 			wa.setTotalWords(totalWords);
-			
+
 			docMap.put(did, wa);
+			h++;
 		}
 		ois.close();
 	}
 
 	@Override
 	public Document getDoc(int docid) {
-		if(!checkInCache(docid)) {
+		if (!checkInCache(docid)) {
 			try {
 				loadDocInCache(docid);
 			} catch (IOException e) {
@@ -320,24 +332,27 @@ public class IndexerInvertedDoconly extends Indexer {
 				e.printStackTrace();
 			}
 		}
+		if(docMap.containsKey(docid))
+			return docMap.get(docid);
+		
 		return null;
 	}
 
 	private boolean checkInCache(int docid) {
 		return docMap.containsKey(docid);
 	}
-	
+
 	private void loadDocInCache(int did) throws IOException {
-		if(docMap.containsKey(did))
+		if (docMap.containsKey(did))
 			return;
-		
+
 		Runtime runtime = Runtime.getRuntime();
-		if(runtime.freeMemory() < 10000) {
+		if (runtime.freeMemory() < 100000000) {
 			Iterator<Integer> iter = docMap.keySet().iterator();
 			int temp = iter.next();
 			docMap.remove(temp);
 		}
-		
+
 		List<String> commands = new ArrayList<String>();
 		commands.add("/bin/bash");
 		commands.add("-c");
@@ -345,33 +360,32 @@ public class IndexerInvertedDoconly extends Indexer {
 		ProcessBuilder pb = new ProcessBuilder(commands);
 		Process p = pb.start();
 		BufferedReader ois = new BufferedReader(new InputStreamReader(p.getInputStream()));
-		
+
 		String o;
 		while (((o = ois.readLine()) != null)) {
 			String[] eachLine = o.split("\t");
 			int docid = Integer.parseInt(eachLine[0]);
-			if(docid > totalNoOfFiles/5)
-				break;
 			DocumentIndexed wa = new DocumentIndexed(docid);
 			String title = eachLine[1];
 			String url = eachLine[2];
-			
+
 			int i = 3;
 			HashMap<String, Integer> wordFreq = new HashMap<String, Integer>();
-			
-			while(i < eachLine.length-1) {
+
+			while (i < eachLine.length - 1) {
 				String word = eachLine[i];
 				i++;
 				int freq = Integer.parseInt(eachLine[i]);
 				wordFreq.put(word, freq);
+				i++;
 			}
-			int totalWords = Integer.parseInt(eachLine[eachLine.length-1]);
+			int totalWords = Integer.parseInt(eachLine[eachLine.length - 1]);
 			
 			wa.setTitle(title);
 			wa.setUrl(url);
 			wa.setWordFrequency(wordFreq);
 			wa.setTotalWords(totalWords);
-			
+
 			docMap.put(docid, wa);
 		}
 		ois.close();
@@ -382,39 +396,46 @@ public class IndexerInvertedDoconly extends Indexer {
 	 */
 	@Override
 	public Document nextDoc(Query query, int docid) {
-		query.processQuery();
-
+		
+		// query.processQuery();
 		// if docid is -1 then make docid=0
-		if (docid == -1) {
-			docid = 0;
-		}		
-		//Pick each word in the query and extract the list of the nextDoc List
-		//Now pick a docid from a word and run a binary search in all the other
+		
+		// Pick each word in the query and extract the list of the nextDoc List
+		// Now pick a docid from a word and run a binary search in all the other
 		// docID list of other words.
 
 		// First find out the smallest list among the list of all the words
-		String smallestListWord = null;
+		String smallestListWord = "";
 		try {
 			smallestListWord = findWordWithSmallestList(query);
-			if (smallestListWord == null)
+			if (smallestListWord.equals(""))
 				return null;
 
 			// Now take a next docId form the list of the smallestListWord
 			WordAttribute smallestWordAttribute = wordMap.get(smallestListWord);
 			List<Integer> smallestList = smallestWordAttribute.getList();
-
+			
+			if(docid == -1) {
+				docid = smallestList.get(0);
+			}
 			// Find the position of docid in the smallestListWord
 			int position = searchForIdInWordList(smallestListWord, docid);
-
 			// Now iterate the list linearly and apply binary search in all the
 			// other words
-			for (int i = position + 1; i < smallestList.size(); i++) {
+			for (int i = position+1; i < smallestList.size(); i++) {
 				int currentDocId = smallestList.get(i);
 				// Now loop through the other words and apply binary search on
 				// all
 				boolean value = isPresentInAll(currentDocId, smallestListWord, query);
 				if (value == true) {
-					return docMap.get(i);
+					if (!checkInCache(currentDocId)) {
+						try {
+							loadDocInCache(currentDocId);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+					return docMap.get(currentDocId);
 				}
 			}
 
@@ -455,11 +476,11 @@ public class IndexerInvertedDoconly extends Indexer {
 	private int searchForIdInWordList(String word, int docid) {
 		// Applying bInary Search to search for the docid in the list of the
 		// word
+		
 		WordAttribute currentWordAttribute = wordMap.get(word);
 		List<Integer> smallestList = currentWordAttribute.getList();
 		int low = 0;
-		int high = smallestList.size();
-
+		int high = smallestList.size()-1;
 		while (low <= high) {
 			// Calculate the middle of the array via the bitwise operator for
 			// unsigned right-shift. This the same as writing ( low + high ) /
@@ -483,8 +504,8 @@ public class IndexerInvertedDoconly extends Indexer {
 	}
 
 	private String findWordWithSmallestList(Query query) throws IOException {
-		int minListLength = 0;
-		String smallestListWord = null;
+		int minListLength = Integer.MAX_VALUE;
+		String smallestListWord = "";
 		for (String strTemp : query._tokens) {
 			boolean flag = false;
 			if (!isPresentInCache(strTemp)) {
@@ -507,22 +528,22 @@ public class IndexerInvertedDoconly extends Indexer {
 	}
 
 	private boolean loadInCache(String word, Query query) throws IOException {
-		if(wordMap.containsKey(word))
-			return false;
-		
+		if (wordMap.containsKey(word))
+			return true;
+
 		List<String> to_be_removed = new ArrayList<String>();
 		int k = 0;
-		for(String s : wordMap.keySet()) {
-			if(k >= query._tokens.size())
+		for (String s : wordMap.keySet()) {
+			if (k >= query._tokens.size())
 				break;
-			if(!query._tokens.contains(s))
+			if (!query._tokens.contains(s))
 				to_be_removed.add(s);
 			k++;
 		}
-		
-		for(String s : to_be_removed)
+
+		for (String s : to_be_removed)
 			wordMap.remove(s);
-		
+
 		boolean flag = false;
 		String firstLetter = word.substring(0, 1);
 		List<String> commands = new ArrayList<String>();
@@ -550,15 +571,14 @@ public class IndexerInvertedDoconly extends Indexer {
 			flag = true;
 		}
 		ois.close();
-		
+
 		return flag;
 	}
-	
+
 	private boolean loadInCache(String word) throws IOException {
-		if(wordMap.containsKey(word))
+		if (wordMap.containsKey(word))
 			return false;
-		
-		
+
 		boolean flag = false;
 		String firstLetter = word.substring(0, 1);
 		List<String> commands = new ArrayList<String>();
@@ -586,7 +606,7 @@ public class IndexerInvertedDoconly extends Indexer {
 			flag = true;
 		}
 		ois.close();
-		
+
 		return flag;
 	}
 
@@ -623,8 +643,16 @@ public class IndexerInvertedDoconly extends Indexer {
 	}
 
 	@Override
-	public int documentTermFrequency(String term, String url) {
-		SearchEngine.Check(false, "Not implemented!");
-		return 0;
+	public int documentTermFrequency(String term, int did) {
+		if (!checkInCache(did)) {
+			try {
+				loadDocInCache(did);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		DocumentIndexed doc = docMap.get(did);
+		int output = doc.getWordFrequencyOf(term);
+		return output;
 	}
 }

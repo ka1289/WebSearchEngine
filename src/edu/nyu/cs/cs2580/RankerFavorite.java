@@ -15,7 +15,6 @@ import edu.nyu.cs.cs2580.SearchEngine.Options;
  *          should use one of your more efficient implementations.
  */
 public class RankerFavorite extends Ranker {
-	private Indexer _index;
 
 	public RankerFavorite(Options options, CgiArguments arguments, Indexer indexer) {
 		super(options, arguments, indexer);
@@ -24,6 +23,7 @@ public class RankerFavorite extends Ranker {
 
 	@Override
 	public Vector<ScoredDocument> runQuery(Query query, int numResults) {
+
 		query.processQuery();
 		Vector<String> qv = query._tokens;
 
@@ -31,15 +31,14 @@ public class RankerFavorite extends Ranker {
 		Document doc = null;
 		int docid = -1;
 
-		while ((doc = _index.nextDoc(query, docid)) != null) {
-			retrieval_results.add(runquery_QL(qv, docid));
+		while ((doc = _indexer.nextDoc(query, docid)) != null) {
+			// System.out.println("doc " + doc._docid);
+			retrieval_results.add(runquery_QL(qv, doc._docid));
 			if (retrieval_results.size() > numResults) {
-				retrieval_results.poll();
+				retrieval_results.poll();	
 			}
 			docid = doc._docid;
 		}
-		
-		
 		Vector<ScoredDocument> results = new Vector<ScoredDocument>();
 		ScoredDocument scoredDoc = null;
 		while ((scoredDoc = retrieval_results.poll()) != null) {
@@ -50,14 +49,14 @@ public class RankerFavorite extends Ranker {
 	}
 
 	private ScoredDocument runquery_QL(Vector<String> query, int did) {
-		DocumentIndexed doc = (DocumentIndexed) _index.getDoc(did);
+		DocumentIndexed doc = (DocumentIndexed) _indexer.getDoc(did);
 		double score = 0;
 		double lambda = 0.5;
 		for (String q : query) {
-			double docTermFreq = _indexer.documentTermFrequency(q, doc.getUrl());
+			double docTermFreq = _indexer.documentTermFrequency(q, doc._docid);
 			double totalWords_doc = doc.getTotalWords();
-			double corpusTermFreq = _index.corpusTermFrequency(q);
-			double totalWords_corpus = _index.totalTermFrequency();
+			double corpusTermFreq = _indexer.corpusTermFrequency(q);
+			double totalWords_corpus = _indexer.totalTermFrequency();
 			double temp = 0.0;
 
 			if (totalWords_doc != 0) {
@@ -69,7 +68,6 @@ public class RankerFavorite extends Ranker {
 
 			score += (Math.log(temp) / Math.log(2));
 		}
-
 		return new ScoredDocument(doc, Math.pow(2, score));
 	}
 

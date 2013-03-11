@@ -50,7 +50,7 @@ public class IndexerInvertedCompressed extends Indexer {
 	 * @CS2580: Implement this for bonus points.
 	 */
 	@Override
-	public int documentTermFrequency(String term, String url) {
+	public int documentTermFrequency(String term, int url) {
 		return 0;
 	}
 }

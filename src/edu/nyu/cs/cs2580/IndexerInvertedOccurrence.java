@@ -458,7 +458,7 @@ public class IndexerInvertedOccurrence extends Indexer {
 	}
 
 	@Override
-	public int documentTermFrequency(String term, String url) {
+	public int documentTermFrequency(String term, int url) {
 		SearchEngine.Check(false, "Not implemented!");
 		return 0;
 	}
