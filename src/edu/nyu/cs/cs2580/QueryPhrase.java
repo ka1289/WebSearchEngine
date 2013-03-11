@@ -1,6 +1,17 @@
 package edu.nyu.cs.cs2580;
 
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Scanner;
+
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.util.Version;
 
 /**
  * @CS2580: implement this class for HW2 to handle phrase. If the raw query is
@@ -32,7 +43,25 @@ public class QueryPhrase extends Query {
 	  		processQuery(tempString);
 	  	}	
 	  	if((tempString = str.substring(i, j+1)).length() > 0) {
-	  		_tokens.add(tempString.substring(1, tempString.length()-1));
+	  		//EnglisgAnalyser and Stemming of words
+	  		Analyzer analyzer = new EnglishAnalyzer(Version.LUCENE_30, new HashSet<String>());
+	  		List<String> words;
+	  		String token = "";
+        try {
+	        words = tokenize(analyzer.tokenStream("", new StringReader(tempString.trim())));
+	        for (String word : words) {
+		  			String stemmedWord = Stemmer.stemAWord(word.trim());
+		  			token += stemmedWord + " ";
+		  		}
+	        token.trim();
+        } catch (IOException e) {
+	        // TODO Auto-generated catch block
+	        e.printStackTrace();
+        }
+        if (!token.isEmpty()) {
+  				_tokens.add(token);
+  			}	  		
+//	  		_tokens.add(tempString.substring(1, tempString.length()-1));
 	  	}	
 	  	index = j+1;
 	  }
@@ -49,5 +78,17 @@ public class QueryPhrase extends Query {
     }
     s.close();
   }
+  
+  static List<String> tokenize(TokenStream stream) throws IOException {
+		List<String> tokens = new ArrayList<String>();
+		CharTermAttribute cattr = stream.addAttribute(CharTermAttribute.class);
+		while (stream.incrementToken()) {
+			tokens.add(cattr.toString());
+		}
+		stream.end();
+		stream.close();
+		return tokens;
+
+	}
   
 }
