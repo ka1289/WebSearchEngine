@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -91,7 +90,7 @@ public class IndexerInvertedDoconly extends Indexer {
 
 		indexedFiles = indexDir.listFiles();
 		for (File file : indexedFiles) {
-			if (file.getName().equals(".DS_Store") || file.getName().equals("doc_map.ser"))
+			if (file.getName().equals(".DS_Store") || file.getName().equals("doc_map.csv"))
 				continue;
 			BufferedReader ois = new BufferedReader(new FileReader(file.getAbsoluteFile()));
 			String o;
@@ -143,10 +142,18 @@ public class IndexerInvertedDoconly extends Indexer {
 
 	private void serialize() throws IOException {
 
-		StringBuilder builder = new StringBuilder(_options._indexPrefix).append("/").append("doc_map.ser");
-		AppendingObjectOutputStream aoos = new AppendingObjectOutputStream(new FileOutputStream(builder.toString(),
-				true));
-		aoos.writeObject(docMap);
+		StringBuilder builder = new StringBuilder(_options._indexPrefix).append("/").append("doc_map.csv");
+		BufferedWriter aoos = new BufferedWriter(new FileWriter(builder.toString(), true));
+		for (int doc : docMap.keySet()) {
+			aoos.write(doc + "\t");
+			DocumentIndexed docIndexed = docMap.get(doc);
+			aoos.write(docIndexed.getTitle() + "\t" + docIndexed.getUrl() + "\t");
+			HashMap<String, Integer> wordFreq = docIndexed.getWordFrequency();
+			for (String s : wordFreq.keySet()) {
+				aoos.write(s + "\t" + wordFreq.get(s) + "\t");
+			}
+			aoos.write(docIndexed.getTotalWords() + "");
+		}
 		aoos.close();
 		docMap.clear();
 
@@ -245,8 +252,12 @@ public class IndexerInvertedDoconly extends Indexer {
 		for (File file : indexedFiles) {
 			// System.out.println(file.getName()+""+runtime.freeMemory());
 			// System.out.println("total no of files in memory"+totalFiles);
-			if (file.getName().equals(".DS_Store") || file.getName().equals("doc_map.ser"))
+			if (file.getName().equals(".DS_Store"))
 				continue;
+			
+			if(file.getName().equals("doc_map.csv"))
+				loadDocMap(file);
+			
 			BufferedReader ois = new BufferedReader(new FileReader(file.getAbsoluteFile()));
 			String o;
 			while (((o = ois.readLine()) != null)) {
@@ -274,6 +285,12 @@ public class IndexerInvertedDoconly extends Indexer {
 			}
 			ois.close();
 		}
+		
+		
+	}
+
+	private void loadDocMap(File file) {
+		
 	}
 
 	@Override
@@ -439,7 +456,7 @@ public class IndexerInvertedDoconly extends Indexer {
 			flag = true;
 		}
 		ois.close();
-
+		
 		return flag;
 	}
 
