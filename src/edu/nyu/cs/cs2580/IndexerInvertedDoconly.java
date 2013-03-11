@@ -248,8 +248,10 @@ public class IndexerInvertedDoconly extends Indexer {
 			if (file.getName().equals(".DS_Store"))
 				continue;
 			
-			if(file.getName().equals("doc_map.csv"))
+			if(file.getName().equals("doc_map.csv")) {
 				loadDocMap(file);
+				continue;
+			}
 			
 			if(file.getName().equals("f.csv"))
 				break;
