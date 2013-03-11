@@ -71,10 +71,10 @@ public class IndexerInvertedOccurrence extends Indexer {
 			i++;
 		}
 
-		if (noOfFiles <= 5 && i <= noOfFiles) {
-			serialize();
-			mapOfMaps = null;
-		}
+		// if (noOfFiles <= 5 && i <= noOfFiles) {
+		serialize();
+		mapOfMaps = null;
+		// }
 
 		try {
 			merge();

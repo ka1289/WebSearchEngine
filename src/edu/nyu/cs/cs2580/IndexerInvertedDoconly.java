@@ -72,10 +72,10 @@ public class IndexerInvertedDoconly extends Indexer {
 			i++;
 		}
 
-		if (noOfFiles <= 5 && i <= noOfFiles) {
-			serialize();
-			mapOfMaps = null;
-		}
+		// if (noOfFiles <= 5 && i <= noOfFiles) {
+		serialize();
+		mapOfMaps = null;
+		// }
 
 		try {
 			merge();
@@ -170,12 +170,6 @@ public class IndexerInvertedDoconly extends Indexer {
 	}
 
 	private void analyse(File eachFile, int index) throws IOException {
-		DocumentIndexed docIndexed = new DocumentIndexed(index);
-		docIndexed.setTitle(eachFile.getName());
-		docIndexed.setUrl(eachFile.getPath());
-
-		docMap.put(index, docIndexed);
-
 		String newFile = Parser.parse(eachFile);
 		Analyzer analyzer = new EnglishAnalyzer(Version.LUCENE_30, new HashSet<String>());
 		List<String> words = tokenize(analyzer.tokenStream("", new StringReader(newFile)));
@@ -205,6 +199,13 @@ public class IndexerInvertedDoconly extends Indexer {
 			}
 		}
 		analyzer.close();
+		
+		DocumentIndexed docIndexed = new DocumentIndexed(index);
+		docIndexed.setTitle(eachFile.getName());
+		docIndexed.setUrl(eachFile.getPath());
+		docIndexed.setTotalWords(words.size());
+		
+		docMap.put(index, docIndexed);
 	}
 
 	private void initializeMap() {

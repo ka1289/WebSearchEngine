@@ -1,9 +1,8 @@
 package edu.nyu.cs.cs2580;
 
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Scanner;
+import java.util.Collections;
+import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.Vector;
 
 import edu.nyu.cs.cs2580.QueryHandler.CgiArguments;
@@ -24,83 +23,54 @@ public class RankerFavorite extends Ranker {
 	}
 
 	@Override
-	  
 	public Vector<ScoredDocument> runQuery(Query query, int numResults) {
-		// String q = query._query;
-		// Scanner s = new Scanner(q);
-		// Vector<String> qv = new Vector<String>();
-		// while (s.hasNext()) {
-		// String term = s.next();
-		// qv.add(term);
-		// }
-		// Vector<ScoredDocument> retrieval_results = new
-		// Vector<ScoredDocument>();
-		// for (int i = 0; i < _index.numDocs(); ++i) {
-		// preprocess(i);
-		// Document doc = _index.getDoc(i);
-		// retrieval_results.add(runquery_QL(qv, i));
-		//
-		// }
-		// s.close();
-		// ScoredDocument[] array = retrieval_results.toArray(new
-		// ScoredDocument[retrieval_results.size()]);
-		// Arrays.sort(array);
-		// retrieval_results = new Vector<ScoredDocument>(Arrays.asList(array));
-		// return retrieval_results;
-		return null;
+		query.processQuery();
+		Vector<String> qv = query._tokens;
+
+		Queue<ScoredDocument> retrieval_results = new PriorityQueue<ScoredDocument>(numResults);
+		Document doc = null;
+		int docid = -1;
+
+		while ((doc = _index.nextDoc(query, docid)) != null) {
+			retrieval_results.add(runquery_QL(qv, docid));
+			if (retrieval_results.size() > numResults) {
+				retrieval_results.poll();
+			}
+			docid = doc._docid;
+		}
+		
+		
+		Vector<ScoredDocument> results = new Vector<ScoredDocument>();
+		ScoredDocument scoredDoc = null;
+		while ((scoredDoc = retrieval_results.poll()) != null) {
+			results.add(scoredDoc);
+		}
+		Collections.sort(results, Collections.reverseOrder());
+		return results;
 	}
 
-	// private void preprocess(int did) {
-	//
-	// Document d = _index.getDoc(did);
-	// HashMap<String, Integer> mapOfWordCounts = new HashMap<String,
-	// Integer>();
-	//
-	// Vector<String> v = d.get_title_vector();
-	// v.addAll(d.get_body_vector());
-	//
-	// for (String word : v) {
-	// corpusTerms.add(word);
-	// if (mapOfWordCounts.containsKey(word)) {
-	// int count = mapOfWordCounts.get(word);
-	// count++;
-	// mapOfWordCounts.put(word, count);
-	// } else {
-	// mapOfWordCounts.put(word, 1);
-	// }
-	// }
-	//
-	// mapOfDocuments.put(did, mapOfWordCounts);
-	// }
-	//
-	// protected long getNumOfOccurrences(String word, int did) {
-	// int count = 0;
-	// for (String s : _index.getDoc(did).get_body_vector()) {
-	// if (s.equals(word))
-	// count++;
-	// }
-	// for (String s : _index.getDoc(did).get_title_vector()) {
-	// if (s.equals(word))
-	// count++;
-	// }
-	// return count;
-	// }
-	//
-	// protected ScoredDocument runquery_QL(Vector<String> query, int did) {
-	// DocumentIndexed document = (DocumentIndexed) _indexer
-	// .getDoc(did);
-	//
-	// double score = 0;
-	// double lambda = 0.5;
-	// for (String q : query) {
-	// double docFreq = (1.0 * getNumOfOccurrences(q, did)) / (1.0 *
-	// document.getTotalWords());
-	// double collectionFreq = (1.0 * _index.termFrequency(q)) / (1.0 *
-	// _index.termFrequency());
-	// double tmp = ((1 - lambda) * (docFreq)) + (lambda * (collectionFreq));
-	// score += (Math.log(tmp) / Math.log(2));
-	// }
-	// return new ScoredDocument(did, document.get_title_string(), Math.pow(2,
-	// score));
-	// }
+	private ScoredDocument runquery_QL(Vector<String> query, int did) {
+		DocumentIndexed doc = (DocumentIndexed) _index.getDoc(did);
+		double score = 0;
+		double lambda = 0.5;
+		for (String q : query) {
+			double docTermFreq = _indexer.documentTermFrequency(q, doc.getUrl());
+			double totalWords_doc = doc.getTotalWords();
+			double corpusTermFreq = _index.corpusTermFrequency(q);
+			double totalWords_corpus = _index.totalTermFrequency();
+			double temp = 0.0;
+
+			if (totalWords_doc != 0) {
+				temp += (1 - lambda) * ((1.0 * docTermFreq) / (1.0 * totalWords_doc));
+			}
+			if (totalWords_corpus != 0) {
+				temp += (lambda) * ((1.0 * corpusTermFreq) / (1.0 * totalWords_corpus));
+			}
+
+			score += (Math.log(temp) / Math.log(2));
+		}
+
+		return new ScoredDocument(doc, Math.pow(2, score));
+	}
+
 }
