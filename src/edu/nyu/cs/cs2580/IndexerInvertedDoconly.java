@@ -10,11 +10,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.io.comparator.SizeFileComparator;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
@@ -225,7 +227,49 @@ public class IndexerInvertedDoconly extends Indexer {
 
 	@Override
 	public void loadIndex() throws IOException, ClassNotFoundException {
+		File indexDir = new File(_options._indexPrefix);
+		File[] indexedFiles = indexDir.listFiles();
+		Runtime runtime = Runtime.getRuntime();
 
+		// list of all the files in index directory
+		indexedFiles = indexDir.listFiles();
+		// indexed files will be sorted in reverse size
+		Arrays.sort(indexedFiles, SizeFileComparator.SIZE_REVERSE);
+		for (File file : indexedFiles) {
+			System.out.println(file.getName());
+		}
+		for (File file : indexedFiles) {
+			// System.out.println(file.getName()+""+runtime.freeMemory());
+			// System.out.println("total no of files in memory"+totalFiles);
+			if (file.getName().equals(".DS_Store") || file.getName().equals("doc_map.ser"))
+				continue;
+			BufferedReader ois = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+			String o;
+			while (((o = ois.readLine()) != null)) {
+				String[] eachLine = o.split("\t");
+				String key = eachLine[0];
+				WordAttribute wa = new WordAttribute();
+				// get the frequency for the words
+				wa.setFreq(Integer.parseInt(eachLine[eachLine.length - 1]));
+				List<Integer> tmpList = new ArrayList<Integer>();
+				for (int i = 1; i < eachLine.length - 1; i++) {
+					tmpList.add(Integer.parseInt(eachLine[i]));
+				}
+				wa.setList(tmpList);
+				tmpList = null;
+				wordMap.put(key, wa);
+
+				if (runtime.freeMemory() <= 100000) {
+					System.out.println("memory full");
+					break;
+				}
+			}
+			System.out.println(file.getName() + "" + runtime.freeMemory());
+			if (runtime.freeMemory() <= 100000) {
+				break;
+			}
+			ois.close();
+		}
 	}
 
 	@Override

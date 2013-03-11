@@ -24,6 +24,7 @@ public class RankerFavorite extends Ranker {
 	}
 
 	@Override
+	  
 	public Vector<ScoredDocument> runQuery(Query query, int numResults) {
 		// String q = query._query;
 		// Scanner s = new Scanner(q);
