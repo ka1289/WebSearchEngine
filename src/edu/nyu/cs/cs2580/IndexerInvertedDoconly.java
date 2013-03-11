@@ -386,15 +386,6 @@ public class IndexerInvertedDoconly extends Indexer {
 		return -1;
 	}
 
-<<<<<<< HEAD
-	private String findWordWithSmallestList(Query query) {
-		int minListLength = 0;
-		String smallestListWord = "";
-		for(String strTemp : query._tokens) {
-			WordAttribute currWordAttribute = wordMap.get(strTemp);
-			int listSize = currWordAttribute.getList().size();
-			if(minListLength > listSize) {
-=======
 	private String findWordWithSmallestList(Query query) throws IOException {
 		int minListLength = 0;
 		String smallestListWord = null;
@@ -408,7 +399,6 @@ public class IndexerInvertedDoconly extends Indexer {
 			WordAttribute currWordAttribute = wordMap.get(strTemp);
 			int listSize = currWordAttribute.getList().size();
 			if (minListLength > listSize) {
->>>>>>> c07f2de4134ff42635501d364cedbae04fb73396
 				minListLength = listSize;
 				smallestListWord = strTemp;
 			}
