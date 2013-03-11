@@ -341,7 +341,6 @@ public class IndexerInvertedDoconly extends Indexer {
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 		return null;
 	}
