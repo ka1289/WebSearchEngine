@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -170,6 +171,10 @@ public class IndexerInvertedDoconly extends Indexer {
 	}
 
 	private void analyse(File eachFile, int index) throws IOException {
+		DocumentIndexed docIndexed = new DocumentIndexed(index);
+		docIndexed.setTitle(eachFile.getName());
+		docIndexed.setUrl(eachFile.getPath());
+
 		String newFile = Parser.parse(eachFile);
 		Analyzer analyzer = new EnglishAnalyzer(Version.LUCENE_30, new HashSet<String>());
 		List<String> words = tokenize(analyzer.tokenStream("", new StringReader(newFile)));
@@ -184,7 +189,7 @@ public class IndexerInvertedDoconly extends Indexer {
 					if (!tmpList.contains(index)) {
 						tmpList.add(index);
 					}
-					long tmpFreq = tmpAttr.getFreq();
+					int tmpFreq = tmpAttr.getFreq();
 					tmpFreq++;
 					tmpAttr.setFreq(tmpFreq);
 					currCharMap.put(stemmed, tmpAttr);
@@ -196,15 +201,13 @@ public class IndexerInvertedDoconly extends Indexer {
 					tmpAttr.getList().addAll(tmpList);
 					currCharMap.put(stemmed, tmpAttr);
 				}
+
+				docIndexed.incrementWordFrequency(stemmed);
 			}
 		}
 		analyzer.close();
-		
-		DocumentIndexed docIndexed = new DocumentIndexed(index);
-		docIndexed.setTitle(eachFile.getName());
-		docIndexed.setUrl(eachFile.getPath());
 		docIndexed.setTotalWords(words.size());
-		
+
 		docMap.put(index, docIndexed);
 	}
 
@@ -295,31 +298,49 @@ public class IndexerInvertedDoconly extends Indexer {
 		// docID list of other words.
 
 		// First find out the smallest list among the list of all the words
-		String smallestListWord = findWordWithSmallestList();
+		String smallestListWord = null;
+		try {
+			smallestListWord = findWordWithSmallestList(query);
+			if (smallestListWord == null)
+				return null;
 
-		// Now take a next docId form the list of the smallestListWord
-		WordAttribute smallestWordAttribute = wordMap.get(smallestListWord);
-		List<Integer> smallestList = smallestWordAttribute.getList();
+			// Now take a next docId form the list of the smallestListWord
+			WordAttribute smallestWordAttribute = wordMap.get(smallestListWord);
+			List<Integer> smallestList = smallestWordAttribute.getList();
 
-		// Find the position of docid in the smallestListWord
-		int position = searchForIdInWordList(smallestListWord, docid);
+			// Find the position of docid in the smallestListWord
+			int position = searchForIdInWordList(smallestListWord, docid);
 
-		// Now iterate the list linearly and apply binary search in all the
-		// other words
-		for (int i = position + 1; i < smallestList.size(); i++) {
-			int currentDocId = smallestList.get(i);
-			// Now loop through the other words and apply binary search on all
-			boolean value = isPresentInAll(currentDocId, smallestListWord, query);
-			if (value == true) {
-				return docMap.get(i);
+			// Now iterate the list linearly and apply binary search in all the
+			// other words
+			for (int i = position + 1; i < smallestList.size(); i++) {
+				int currentDocId = smallestList.get(i);
+				// Now loop through the other words and apply binary search on
+				// all
+				boolean value = isPresentInAll(currentDocId, smallestListWord, query);
+				if (value == true) {
+					return docMap.get(i);
+				}
 			}
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		return null;
 	}
 
-	private boolean isPresentInAll(int docid, String originalWord, Query query) {
-
-		for (String str : query._tokens) {
+	private boolean isPresentInAll(int docid, String originalWord, Query query) throws IOException {
+		ArrayList<String> tokens = new ArrayList<String>();
+		for (String s : query._tokens) {
+			boolean flag = false;
+			if (!isPresentInCache(s)) {
+				flag = loadInCache(s);
+				if (!flag)
+					tokens.add(s);
+			}
+		}
+		for (String str : tokens) {
 			if (str == originalWord) {
 				continue;
 			} else if (searchForIdInWordList(str, docid) != -1) {
@@ -366,29 +387,90 @@ public class IndexerInvertedDoconly extends Indexer {
 		return -1;
 	}
 
-	private String findWordWithSmallestList() {
+	private String findWordWithSmallestList(Query query) throws IOException {
 		int minListLength = 0;
-		String smallestListWord = "";
-		for (Map.Entry<String, WordAttribute> currentEntry : wordMap.entrySet()) {
-			WordAttribute currentWordAttribute = currentEntry.getValue();
-			List<Integer> currentList = currentWordAttribute.getList();
-			if (minListLength > currentList.size()) {
-				minListLength = currentList.size();
-				smallestListWord = currentEntry.getKey();
+		String smallestListWord = null;
+		for (String strTemp : query._tokens) {
+			boolean flag = false;
+			if (!isPresentInCache(strTemp)) {
+				flag = loadInCache(strTemp);
+				if (flag == true)
+					continue;
+			}
+			WordAttribute currWordAttribute = wordMap.get(strTemp);
+			int listSize = currWordAttribute.getList().size();
+			if (minListLength > listSize) {
+				minListLength = listSize;
+				smallestListWord = strTemp;
 			}
 		}
 		return smallestListWord;
 	}
 
+	private boolean isPresentInCache(String word) {
+		return wordMap.containsKey(word);
+	}
+
+	private boolean loadInCache(String word) throws IOException {
+		boolean flag = false;
+		String firstLetter = word.substring(0, 1);
+		List<String> commands = new ArrayList<String>();
+		commands.add("/bin/bash");
+		commands.add("-c");
+		commands.add("grep $'^" + word + "\t' " + _options._indexPrefix + "/" + firstLetter + ".csv");
+		ProcessBuilder pb = new ProcessBuilder(commands);
+		Process p = pb.start();
+		BufferedReader ois = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+		String o;
+		while (((o = ois.readLine()) != null)) {
+			String[] eachLine = o.split("\t");
+			String key = eachLine[0];
+			WordAttribute wa = new WordAttribute();
+
+			wa.setFreq(Integer.parseInt(eachLine[eachLine.length - 1]));
+			List<Integer> tmpList = new ArrayList<Integer>();
+			for (int i = 1; i < eachLine.length - 1; i++) {
+				tmpList.add(Integer.parseInt(eachLine[i]));
+			}
+			wa.setList(tmpList);
+			tmpList = null;
+			wordMap.put(key, wa);
+			flag = true;
+		}
+		ois.close();
+
+		return flag;
+	}
+
 	@Override
 	public int corpusDocFrequencyByTerm(String term) {
-
-		return 0;
+		boolean flag = false;
+		if (!isPresentInCache(term)) {
+			try {
+				flag = loadInCache(term);
+				if (flag == true)
+					return 0;
+			} catch (IOException e) {
+				// TODO
+			}
+		}
+		return wordMap.get(term).getList().size();
 	}
 
 	@Override
 	public int corpusTermFrequency(String term) {
-		return 0;
+		boolean flag = false;
+		if (!isPresentInCache(term)) {
+			try {
+				flag = loadInCache(term);
+				if (flag == true)
+					return 0;
+			} catch (IOException e) {
+				// TODO
+			}
+		}
+		return (int) wordMap.get(term).getFreq();
 	}
 
 	@Override

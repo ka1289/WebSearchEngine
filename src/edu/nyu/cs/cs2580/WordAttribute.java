@@ -6,7 +6,7 @@ import java.util.List;
 public class WordAttribute {
 
 	private List<Integer> list = new ArrayList<Integer>();
-	private long freq;
+	private int freq;
 
 	public List<Integer> getList() {
 		return list;
@@ -16,11 +16,11 @@ public class WordAttribute {
 		this.list = list;
 	}
 
-	public long getFreq() {
+	public int getFreq() {
 		return freq;
 	}
 
-	public void setFreq(long freq) {
+	public void setFreq(int freq) {
 		this.freq = freq;
 	}
 
