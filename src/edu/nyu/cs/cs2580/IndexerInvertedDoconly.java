@@ -308,10 +308,9 @@ public class IndexerInvertedDoconly extends Indexer {
 		// if docid is -1 then make docid=0
 		if (docid == -1) {
 			docid = 0;
-		}
-
-		// Pick each word in the query and extract the list of the nextDoc List
-		// Now pick a docid from a word and run a binary search in all the other
+		}		
+		//Pick each word in the query and extract the list of the nextDoc List
+		//Now pick a docid from a word and run a binary search in all the other
 		// docID list of other words.
 
 		// First find out the smallest list among the list of all the words

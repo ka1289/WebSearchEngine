@@ -272,9 +272,180 @@ public class IndexerInvertedOccurrence extends Indexer {
 	 * In HW2, you should be using {@link DocumentIndexed}.
 	 */
 	@Override
-	public Document nextDoc(Query query, int docid) {
+	public DocumentIndexed nextDoc(Query query, int docid) {
+		QueryPhrase queryPhrase = new QueryPhrase(query._query);
+		queryPhrase.processQuery();
+		
+	// if docid is -1 then make docid=0
+		if (docid == -1) {
+			docid = 0;
+		}
+		
+		List<String> phrases = new ArrayList<String>();
+		StringBuilder tokens = new StringBuilder();
+		for(String strTemp : queryPhrase._tokens) {			
+			//Checking of the string is a phrase or not
+			if(strTemp.split(" ").length > 1) {
+				phrases.add(strTemp);
+			}	
+			else {
+				tokens.append(strTemp);
+			}			
+		}
+		//I get the next document to be checked for phrase which contains all the other
+		//non phrase tokens
+		//Run a Loop here-----
+		
+		DocumentIndexed documentToBeCheckedForPhrases = nextDocToken(new Query(tokens.toString()), docid);
+		while(documentToBeCheckedForPhrases != null) {
+			//Check if all the phrases in the original query are present in the document
+			boolean value = checkIfPhrasesPresent(documentToBeCheckedForPhrases._docid,phrases);
+			if(!value) {
+				documentToBeCheckedForPhrases = nextDocToken(new Query(tokens.toString()), docid);
+				continue;
+			}
+			else {
+				return documentToBeCheckedForPhrases;
+			}
+		}	
+//	 First find out the smallest list among the list of all the words
+//		String smallestListWord = findWordWithSmallestList();
+//		
+//	 Now take a next docId form the list of the smallestListWord
+//		WordAttribute_WordOccurrences smallestWordAttribute_WordOccurrences = wordMap.get(smallestListWord);
+//		LinkedHashMap<Integer, ArrayList<Integer>> smallestMap = smallestWordAttribute_WordOccurrences.getList();
+//		
+//	 Find the position of docid in the smallestListWord
+//		ArrayList<Integer> positions = smallestMap.get(docid);		
+		
 		return null;
 	}
+	
+	
+	private boolean checkIfPhrasesPresent(int docid, List<String> phrases) {
+		for(String str : phrases) {
+			boolean value = isPhrasePresent(str,docid);
+			if(value) {
+				continue;
+			}
+			else {
+				return false;
+			}
+		}
+		return true;	  
+  }
+
+	/**
+	 * 
+	 * Checks if the particular phrase is present in the docid
+	 * @param str
+	 * @param docid
+	 * @return
+	 */
+	private boolean isPhrasePresent(String str, int docid) {
+	  String[] phrase = str.split(" ");
+	  WordAttribute_WordOccurrences currentWordAttribute_WordOccurrences = wordMap.get(phrase[0]);
+	  LinkedHashMap<Integer, ArrayList<Integer>> map = currentWordAttribute_WordOccurrences.getList();
+	  List<Integer> list = map.get(docid);
+	  boolean flag = false;
+	  for(int position : list) {
+	  	flag = false;
+	  	int currentPositon = position+1;
+	  	for(int j=1;j<phrase.length;j++) {
+	  		boolean value = isPresentAtPosition(currentPositon,docid,phrase[j]);
+	  		if(value) {
+	  			currentPositon++;
+	  			continue;	  			
+	  		}
+	  		else {
+	  			flag = true;
+	  			break;	  			
+	  		}
+	  	}
+	  	if(!flag) {
+	  		return true;
+	  	}
+	  }
+	  return false;
+  }
+
+	private boolean isPresentAtPosition(int position, int docid, String string) {	  
+		WordAttribute_WordOccurrences currentWordAttribute_WordOccurrences = wordMap.get(string);
+	  LinkedHashMap<Integer, ArrayList<Integer>> map = currentWordAttribute_WordOccurrences.getList();
+	  List<Integer> list = map.get(docid);
+	  return list.contains(position);
+  }
+	
+
+	private DocumentIndexed nextDocToken(Query query, int docid) {
+		query.processQuery();
+
+	// if docid is -1 then make docid=0
+		if (docid == -1) {
+			docid = 0;
+		}
+		
+	// First find out the smallest list among the list of all the words
+		String smallestListWord = findWordWithSmallestList(query);
+		
+	//Now take a next docId form the list of the smallestListWord
+		WordAttribute_WordOccurrences smallestWordAttribute_WordOccurrences = wordMap.get(smallestListWord);		
+		LinkedHashMap<Integer, ArrayList<Integer>> smallestMap = smallestWordAttribute_WordOccurrences.getList();
+		
+		//Now we iterate through the map and after we reach the docid given
+		//From the next docid we will have to call isPresentInAll for the query
+		//SImilar to the function written in IndexerInvertedDoconly.java
+		
+		for(Map.Entry<Integer, ArrayList<Integer>> currentMap : smallestMap.entrySet()) {
+			int currentDocId = currentMap.getKey(); 
+			if(currentDocId <= docid) {
+				continue;				
+			}
+			boolean value = isPresentInAll(currentDocId, smallestListWord, query);
+			if (value == true) {
+				return docMap.get(currentDocId);
+			}			
+		}
+		return null;
+	}
+
+	private boolean isPresentInAll(int docid, String originalWord,
+      Query query) {
+		for (String str : query._tokens) {
+			if (str == originalWord) {
+				continue;
+			} else if (searchForIdInWordList(str, docid)) {
+				continue;
+			} else {
+				return false;
+			}
+		}
+		return true;	  
+  }
+
+	private boolean searchForIdInWordList(String str, int docid) {
+		//Now since we have a map we cn esily verify if the word is present in a document		
+		WordAttribute_WordOccurrences currentWordAttribute_WordOccurrences = wordMap.get(str);
+		LinkedHashMap<Integer, ArrayList<Integer>> currentMap = currentWordAttribute_WordOccurrences.getList();
+		return currentMap.containsKey(docid);  
+  }
+
+
+
+
+	private String findWordWithSmallestList(Query query) {
+		int minListLength = 0;
+		String smallestListWord = "";
+		for(String strTemp : query._tokens) {
+			WordAttribute_WordOccurrences currentWordAttribute_WordOccurrences = wordMap.get(strTemp);
+			int mapSize = currentWordAttribute_WordOccurrences.getList().size();
+			if(minListLength > mapSize) {
+				minListLength = mapSize;
+				smallestListWord = strTemp;
+			}
+		}
+		return smallestListWord;
+  }
 
 	@Override
 	public int corpusDocFrequencyByTerm(String term) {
