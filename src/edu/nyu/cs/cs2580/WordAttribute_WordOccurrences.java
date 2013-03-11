@@ -3,18 +3,17 @@ package edu.nyu.cs.cs2580;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.Map;
 
 public class WordAttribute_WordOccurrences {
 	//Maps the docid to the positions at which the word occurred
-	private Map<Integer, ArrayList<Integer>> list = new HashMap<Integer, ArrayList<Integer>>();
+	private LinkedHashMap<Integer, ArrayList<Integer>> list = new LinkedHashMap<Integer, ArrayList<Integer>>();
 	private long freq;
 
-	public Map<Integer, ArrayList<Integer>> getList() {
+	public LinkedHashMap<Integer, ArrayList<Integer>> getList() {
 		return list;
 	}
 
-	public void setList(HashMap<Integer, ArrayList<Integer>> list) {
+	public void setList(LinkedHashMap<Integer, ArrayList<Integer>> list) {
 		this.list = list;
 	}
 
