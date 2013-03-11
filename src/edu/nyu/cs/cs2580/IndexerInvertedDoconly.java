@@ -461,12 +461,13 @@ public class IndexerInvertedDoconly extends Indexer {
 			return false;
 		
 		List<String> to_be_removed = new ArrayList<String>();
-		int i = 0;
+		int k = 0;
 		for(String s : wordMap.keySet()) {
-			if(i >= query._tokens.size())
+			if(k >= query._tokens.size())
 				break;
 			if(!query._tokens.contains(s))
 				to_be_removed.add(s);
+			k++;
 		}
 		
 		for(String s : to_be_removed)
