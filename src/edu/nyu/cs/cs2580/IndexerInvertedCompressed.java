@@ -51,6 +51,7 @@ public class IndexerInvertedCompressed extends Indexer {
 	 */
 	@Override
 	public int documentTermFrequency(String term, String url) {
+		// TODO
 		return 0;
 	}
 }

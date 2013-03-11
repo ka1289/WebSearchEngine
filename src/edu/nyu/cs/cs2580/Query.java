@@ -33,31 +33,31 @@ public class Query {
 	}
 
 	public void processQuery() {
-		
+
 		if (_query == null) {
 			return;
 		}
 		String token = "";
 		Analyzer analyzer = new EnglishAnalyzer(Version.LUCENE_30, new HashSet<String>());
 		try {
-	    List<String> words = tokenize(analyzer.tokenStream("", new StringReader(_query.trim())));
-	    
+			List<String> words = tokenize(analyzer.tokenStream("", new StringReader(_query.trim())));
 			for (String word : words) {
 				String stemmedWord = Stemmer.stemAWord(word.trim());
 				token += stemmedWord + " ";
 			}
 			token.trim();
-    } catch (IOException e) {	    
-	    e.printStackTrace();
-    }
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		Scanner s = new Scanner(token);
 		while (s.hasNext()) {
 			_tokens.add(s.next());
 		}
-		s.close();		
+		
+		analyzer.close();
+		s.close();
 	}
-	
-	
+
 	static List<String> tokenize(TokenStream stream) throws IOException {
 		List<String> tokens = new ArrayList<String>();
 		CharTermAttribute cattr = stream.addAttribute(CharTermAttribute.class);
