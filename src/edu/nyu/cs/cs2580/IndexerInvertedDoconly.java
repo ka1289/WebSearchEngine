@@ -341,6 +341,7 @@ public class IndexerInvertedDoconly extends Indexer {
 			docMap.put(did, wa);
 			h++;
 		}
+		ois.close();
 	}
 
 	@Override

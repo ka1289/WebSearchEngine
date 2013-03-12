@@ -222,26 +222,25 @@ public class IndexerInvertedOccurrence extends Indexer {
 		DocumentIndexed docIndexed = new DocumentIndexed(index);
 		docIndexed.setTitle(eachFile.getName());
 		docIndexed.setUrl(eachFile.getPath());
-		// docMap.put(index, docIndexed);
-		//
-		// FileReader fr = new FileReader(eachFile);
-		// BufferedReader br = new BufferedReader(fr);
-		// String line = "";
-		// StringBuilder temp = new StringBuilder();
-		//
-		// while ((line = br.readLine()) != null) {
-		// temp.append(line);
-		// }
-		// String htmlText = temp.toString();
-		// Source htmlSource = new Source(htmlText);
-		// Segment htmlSeg = new Segment(htmlSource, 0, htmlText.length());
-		// Renderer htmlRend = new Renderer(htmlSeg);
-		// br.close();
-		// fr.close();
-		// String newFile = htmlRend.toString();
 
+		HashSet<String> stopWords = new HashSet<String>();
+		stopWords.add("the");
+		stopWords.add("and");
+		stopWords.add("or");
+		stopWords.add("an");
+		stopWords.add("if");
+		stopWords.add("but");
+		stopWords.add("the");
+		stopWords.add("is");
+		stopWords.add("an");
+		stopWords.add("he");
+		stopWords.add("she");
+		stopWords.add("be");
+		stopWords.add("me");
+		stopWords.add("has");
+		stopWords.add("http");
 		String newFile = Parser.parse(eachFile);
-		Analyzer analyzer = new EnglishAnalyzer(Version.LUCENE_30, new HashSet<String>());
+		Analyzer analyzer = new EnglishAnalyzer(Version.LUCENE_30, stopWords);
 		List<String> words = tokenize(analyzer.tokenStream("", new StringReader(newFile)));
 		int i = 0;
 		for (String word : words) {
@@ -256,7 +255,7 @@ public class IndexerInvertedOccurrence extends Indexer {
 					currMap.put(stemmed, currWordAttr);
 				}
 				WordAttribute_WordOccurrences currWordAttr = currMap.get(stemmed);
-				Map<Integer, ArrayList<Integer>> currMapMap = currWordAttr.getList();
+				LinkedHashMap<Integer, ArrayList<Integer>> currMapMap = currWordAttr.getList();
 				if (currMapMap.containsKey(index)) {
 					ArrayList<Integer> listOfOccurrences = currMapMap.get(index);
 					listOfOccurrences.add(i);
