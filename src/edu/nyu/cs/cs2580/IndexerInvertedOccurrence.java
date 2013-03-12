@@ -142,7 +142,6 @@ public class IndexerInvertedOccurrence extends Indexer {
 						}
 
 						currMap.put(did, list);
-
 					}
 					wa.setList(currMap);
 					wordMap.put(key, wa);
@@ -317,7 +316,7 @@ public class IndexerInvertedOccurrence extends Indexer {
 	}
 
 	private void loadFile(File file) throws NumberFormatException, IOException {
-		// TODO Auto-generated method stub
+		
 		BufferedReader ois = new BufferedReader(new FileReader(file.getAbsoluteFile()));
 		String o;
 		while (((o = ois.readLine()) != null)) {
@@ -565,7 +564,7 @@ public class IndexerInvertedOccurrence extends Indexer {
 	}
 
 	private String findWordWithSmallestList(Query query) {
-		int minListLength = 0;
+		int minListLength = Integer.MAX_VALUE;
 		String smallestListWord = "";
 		for (String strTemp : query._tokens) {
 			WordAttribute_WordOccurrences currentWordAttribute_WordOccurrences = wordMap.get(strTemp);
