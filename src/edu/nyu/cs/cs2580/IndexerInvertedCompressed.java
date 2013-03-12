@@ -2,6 +2,7 @@ package edu.nyu.cs.cs2580;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,10 +30,10 @@ public class IndexerInvertedCompressed extends Indexer {
 		int i = 0;
 		int index = 1;
 		initializeMap();
-		
+
 		for (File eachFile : listOfFiles) {
 			if (i >= noOfFiles / 5) {
-//				serialize();
+				// serialize();
 				mapOfMaps = null;
 				i = 0;
 				initializeMap();
@@ -41,11 +42,34 @@ public class IndexerInvertedCompressed extends Indexer {
 			index++;
 			i++;
 		}
-		
+
 	}
 
 	private void analyse(File eachFile, int index) {
 		
+	}
+
+	private ArrayList<Byte> encode(int value) {
+		ArrayList<Byte> array = new ArrayList<Byte>();
+
+		while (value > 0) {
+			int num = (int) Math.pow(2, 7);
+			num = num - 1;
+			byte b = (byte) (value & num);
+			array.add(b);
+			value = value >> 7;
+		}
+		return array;
+	}
+	
+	private int decode(ArrayList<Byte> array) {
+		int out = 0;
+		
+		for(int j=0;j<array.size();j++) {
+			int tmp = (int)Math.pow(128, j);
+			out += tmp * array.get(j);
+		}
+		return out;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -55,7 +79,7 @@ public class IndexerInvertedCompressed extends Indexer {
 			mapOfMaps[j] = new HashMap<String, WordAttribute_compressed>();
 		}
 	}
-	
+
 	@Override
 	public void loadIndex() throws IOException, ClassNotFoundException {
 	}
