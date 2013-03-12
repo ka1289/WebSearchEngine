@@ -255,8 +255,8 @@ public class IndexerInvertedCompressed extends Indexer {
 					writeByte(len_bytes, oos);
 					oos.writeBytes("\t");
 
-					for (int h=0;h<temp_occr.size();h++) {
-						writeByte(temp_occr.get(h), oos);
+					for (ArrayList<Byte> eachOccr : temp_occr) {
+						writeByte(eachOccr, oos);
 						oos.writeBytes("\t");
 					}
 					
