@@ -64,18 +64,33 @@ public class QueryPhrase extends Query {
 	  	}	
 	  	index = j+1;
 	  }
-	  _tokens.add(str.substring(index, str.length()));
+	  String tempStr = str.substring(index, str.length());
+	  String stemmedWord = Stemmer.stemAWord(tempStr.trim());
+	  _tokens.add(stemmedWord);
   }
   
-  private void processQuery(String _query) {
+  private void processQuery(String _query) {  	
   	if (_query == null) {
-      return;
-    }
-    Scanner s = new Scanner(_query);
-    while (s.hasNext()) {
-      _tokens.add(s.next());
-    }
-    s.close();
+			return;
+		}
+		String token = "";
+		Analyzer analyzer = new EnglishAnalyzer(Version.LUCENE_30, new HashSet<String>());
+		try {
+			List<String> words = tokenize(analyzer.tokenStream("", new StringReader(_query.trim())));
+			for (String word : words) {
+				String stemmedWord = Stemmer.stemAWord(word.trim());
+				token += stemmedWord + " ";
+			}
+			token.trim();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		Scanner s = new Scanner(token);
+		while (s.hasNext()) {
+			_tokens.add(s.next());
+		}
+		analyzer.close();
+		s.close();
   }
   
   static List<String> tokenize(TokenStream stream) throws IOException {
