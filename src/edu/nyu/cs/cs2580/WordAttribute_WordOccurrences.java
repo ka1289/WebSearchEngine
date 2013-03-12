@@ -1,7 +1,6 @@
 package edu.nyu.cs.cs2580;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 public class WordAttribute_WordOccurrences {

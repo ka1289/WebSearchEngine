@@ -91,6 +91,7 @@ class IndexerFullScan extends Indexer implements Serializable {
 	 * @param content
 	 */
 	private void processDocument(String content) {
+		@SuppressWarnings("resource")
 		Scanner s = new Scanner(content).useDelimiter("\t");
 
 		String title = s.next();
@@ -117,6 +118,7 @@ class IndexerFullScan extends Indexer implements Serializable {
 		for (Integer idx : uniqueTerms) {
 			_termDocFrequency.put(idx, _termDocFrequency.get(idx) + 1);
 		}
+		s.close();
 	}
 
 	/**
@@ -142,6 +144,7 @@ class IndexerFullScan extends Indexer implements Serializable {
 			}
 			tokens.add(idx);
 		}
+		s.close();
 		return;
 	}
 
@@ -222,7 +225,7 @@ class IndexerFullScan extends Indexer implements Serializable {
 	}
 
 	@Override
-	public int documentTermFrequency(String term, int url) {
+	public int documentTermFrequency(String term, String url) {
 		SearchEngine.Check(false, "Not implemented!");
 		return 0;
 	}
