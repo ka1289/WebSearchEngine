@@ -2,7 +2,9 @@ package edu.nyu.cs.cs2580;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import edu.nyu.cs.cs2580.SearchEngine.Options;
@@ -70,8 +72,58 @@ public class IndexerInvertedCompressed extends Indexer {
 	 */
 	@Override
 	public Document nextDoc(Query query, int docid) {
+		QueryPhrase queryPhrase = new QueryPhrase(query._query);
+		queryPhrase.processQuery();
+		
+		List<String> phrases = new ArrayList<String>();
+		StringBuilder tokens = new StringBuilder();
+		for(String strTemp : queryPhrase._tokens) {
+		//Checking of the string is a phrase or not
+			if(strTemp.split(" ").length > 1) {
+				phrases.add(strTemp);
+			}	
+			else {
+				tokens.append(strTemp);
+			}
+		}
+		
+		//I get the next document to be checked for phrase which contains all the other
+		//non phrase tokens
+		//Run a Loop here-----
+		DocumentIndexed documentToBeCheckedForPhrases = nextDocToken(new Query(tokens.toString()), docid);
+		
 		return null;
 	}
+	
+	
+	
+
+	private DocumentIndexed nextDocToken(Query query, int docid) {
+		query.processQuery();
+		
+	// First find out the smallest list among the list of all the words
+		String smallestListWord = findWordWithSmallestList(query);
+		
+		
+	  return null;
+  }
+
+	private String findWordWithSmallestList(Query query) {
+		int minListLength = Integer.MAX_VALUE;
+		String smallestListWord = "";
+		for(String strTemp : query._tokens) {
+			WordAttribute_compressed currentWordAttribute_compressed = wordMap.get(strTemp);
+			int mapSize = currentWordAttribute_compressed.getList().size();
+			
+			
+			
+			
+			
+		}
+		
+		
+	  return null;
+  }
 
 	@Override
 	public int corpusDocFrequencyByTerm(String term) {
