@@ -15,6 +15,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.htmlparser.jericho.Renderer;
+import net.htmlparser.jericho.Segment;
+import net.htmlparser.jericho.Source;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
@@ -60,12 +64,14 @@ public class IndexerInvertedOccurrence extends Indexer {
 		initializeMap();
 
 		for (File eachFile : listOfFiles) {
-			if (i >= noOfFiles / 5) {
+			if (i >= noOfFiles / 10) {
+				System.out.println("here");
 				serialize();
 				mapOfMaps = null;
 				i = 0;
 				initializeMap();
 			}
+			System.out.println(i);
 			analyse(eachFile, index);
 			index++;
 			i++;
@@ -204,7 +210,6 @@ public class IndexerInvertedOccurrence extends Indexer {
 			}
 			oos.close();
 		}
-
 	}
 
 	private void analyse(File eachFile, int index) throws IOException {
@@ -215,7 +220,22 @@ public class IndexerInvertedOccurrence extends Indexer {
 
 		docMap.put(index, docIndexed);
 
-		String newFile = Parser.parse(eachFile);
+		FileReader fr = new FileReader(eachFile);
+		BufferedReader br = new BufferedReader(fr);
+		String line = "";
+		StringBuilder temp = new StringBuilder();
+
+		while ((line = br.readLine()) != null) {
+			temp.append(line);
+		}
+		String htmlText = temp.toString();
+		Source htmlSource = new Source(htmlText);
+		Segment htmlSeg = new Segment(htmlSource, 0, htmlText.length());
+		Renderer htmlRend = new Renderer(htmlSeg);
+		br.close();
+		fr.close();
+		String newFile = htmlRend.toString();
+		
 		Analyzer analyzer = new EnglishAnalyzer(Version.LUCENE_30, new HashSet<String>());
 		List<String> words = tokenize(analyzer.tokenStream("", new StringReader(newFile)));
 		int i = 0;

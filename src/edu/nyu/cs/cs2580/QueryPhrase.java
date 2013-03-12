@@ -54,8 +54,7 @@ public class QueryPhrase extends Query {
 		  			token += stemmedWord + " ";
 		  		}
 	        token.trim();
-        } catch (IOException e) {
-	        // TODO Auto-generated catch block
+        } catch (IOException e) {	        
 	        e.printStackTrace();
         }
         if (!token.isEmpty()) {
@@ -88,7 +87,5 @@ public class QueryPhrase extends Query {
 		stream.end();
 		stream.close();
 		return tokens;
-
-	}
-  
+	}  
 }

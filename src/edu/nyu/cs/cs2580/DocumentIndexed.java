@@ -23,7 +23,7 @@ public class DocumentIndexed extends Document {
 		super(docid);
 	}
 
-	public double getTotalWords() {
+	public long getTotalWords() {
 		return totalWords;
 	}
 
