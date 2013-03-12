@@ -16,10 +16,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.htmlparser.jericho.Renderer;
-import net.htmlparser.jericho.Segment;
-import net.htmlparser.jericho.Source;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
@@ -146,7 +142,6 @@ public class IndexerInvertedOccurrence extends Indexer {
 						}
 
 						currMap.put(did, list);
-
 					}
 					wa.setList(currMap);
 					wordMap.put(key, wa);
@@ -183,7 +178,7 @@ public class IndexerInvertedOccurrence extends Indexer {
 
 		StringBuilder builder = new StringBuilder(_options._indexPrefix).append("/").append("doc_map.csv");
 		BufferedWriter aoos = new BufferedWriter(new FileWriter(builder.toString(), true));
-		//aoos.writeObject(docMap);
+		// aoos.writeObject(docMap);
 		for (int doc : docMap.keySet()) {
 			aoos.write(doc + "\t");
 			DocumentIndexed docIndexed = docMap.get(doc);
@@ -226,23 +221,23 @@ public class IndexerInvertedOccurrence extends Indexer {
 		DocumentIndexed docIndexed = new DocumentIndexed(index);
 		docIndexed.setTitle(eachFile.getName());
 		docIndexed.setUrl(eachFile.getPath());
-//		docMap.put(index, docIndexed);
-//
-//		FileReader fr = new FileReader(eachFile);
-//		BufferedReader br = new BufferedReader(fr);
-//		String line = "";
-//		StringBuilder temp = new StringBuilder();
-//
-//		while ((line = br.readLine()) != null) {
-//			temp.append(line);
-//		}
-//		String htmlText = temp.toString();
-//		Source htmlSource = new Source(htmlText);
-//		Segment htmlSeg = new Segment(htmlSource, 0, htmlText.length());
-//		Renderer htmlRend = new Renderer(htmlSeg);
-//		br.close();
-//		fr.close();
-//		String newFile = htmlRend.toString();	
+		// docMap.put(index, docIndexed);
+		//
+		// FileReader fr = new FileReader(eachFile);
+		// BufferedReader br = new BufferedReader(fr);
+		// String line = "";
+		// StringBuilder temp = new StringBuilder();
+		//
+		// while ((line = br.readLine()) != null) {
+		// temp.append(line);
+		// }
+		// String htmlText = temp.toString();
+		// Source htmlSource = new Source(htmlText);
+		// Segment htmlSeg = new Segment(htmlSource, 0, htmlText.length());
+		// Renderer htmlRend = new Renderer(htmlSeg);
+		// br.close();
+		// fr.close();
+		// String newFile = htmlRend.toString();
 
 		String newFile = Parser.parse(eachFile);
 		Analyzer analyzer = new EnglishAnalyzer(Version.LUCENE_30, new HashSet<String>());
@@ -294,24 +289,26 @@ public class IndexerInvertedOccurrence extends Indexer {
 	@Override
 	public void loadIndex() throws IOException, ClassNotFoundException {
 		Runtime runtime = Runtime.getRuntime();
-		wordMap =new HashMap<String, WordAttribute_WordOccurrences>();
+		wordMap = new HashMap<String, WordAttribute_WordOccurrences>();
 
 		File indexDir = new File(_options._indexPrefix);
 		File[] indexedFiles = indexDir.listFiles();
 
 		for (File file : indexedFiles) {
-			long freeMemory=(runtime.freeMemory() / 1024/1024);
+			long freeMemory = (runtime.freeMemory() / 1024 / 1024);
 			if (file.getName().equals(".DS_Store"))
 				continue;
 
 			if (file.getName().equals("doc_map.csv")) {
 				System.out.println(file.getName());
 				loadDocMap(file);
-				continue;			
+				continue;
 			}
-			//at the point when the file is read the free memory available is checked,
-			//if it is enough the file will be copied else the file wont be copied		
-			if (freeMemory>10 && !file.getName().equals("doc_map.csv") && !file.getName().equals(".DS_Store")){
+			// at the point when the file is read the free memory available is
+			// checked,
+			// if it is enough the file will be copied else the file wont be
+			// copied
+			if (freeMemory > 10 && !file.getName().equals("doc_map.csv") && !file.getName().equals(".DS_Store")) {
 				System.out.println(file.getName());
 				loadFile(file);
 			}
@@ -388,6 +385,7 @@ public class IndexerInvertedOccurrence extends Indexer {
 		}
 		ois.close();
 	}
+
 	@Override
 	public Document getDoc(int docid) {
 		if (!checkInCache(docid)) {
@@ -398,7 +396,7 @@ public class IndexerInvertedOccurrence extends Indexer {
 				e.printStackTrace();
 			}
 		}
-		if(docMap.containsKey(docid))
+		if (docMap.containsKey(docid))
 			return docMap.get(docid);
 
 		return null;
@@ -413,67 +411,68 @@ public class IndexerInvertedOccurrence extends Indexer {
 		queryPhrase.processQuery();
 
 		// if docid is -1 then make docid=0
-//		if (docid == -1) {			
-//			docid = smallestList.get(0);			
-//		}
+		// if (docid == -1) {
+		// docid = smallestList.get(0);
+		// }
 
 		List<String> phrases = new ArrayList<String>();
 		StringBuilder tokens = new StringBuilder();
-		for(String strTemp : queryPhrase._tokens) {			
-			//Checking of the string is a phrase or not
-			if(strTemp.split(" ").length > 1) {
+		for (String strTemp : queryPhrase._tokens) {
+			// Checking of the string is a phrase or not
+			if (strTemp.split(" ").length > 1) {
 				phrases.add(strTemp);
-			}	
-			else {
+			} else {
 				tokens.append(strTemp);
-			}			
+			}
 		}
-		//I get the next document to be checked for phrase which contains all the other
-		//non phrase tokens
-		//Run a Loop here-----
+		// I get the next document to be checked for phrase which contains all
+		// the other
+		// non phrase tokens
+		// Run a Loop here-----
 
 		DocumentIndexed documentToBeCheckedForPhrases = nextDocToken(new Query(tokens.toString()), docid);
-		while(documentToBeCheckedForPhrases != null) {
-			//Check if all the phrases in the original query are present in the document
-			boolean value = checkIfPhrasesPresent(documentToBeCheckedForPhrases._docid,phrases);
-			if(!value) {
+		while (documentToBeCheckedForPhrases != null) {
+			// Check if all the phrases in the original query are present in the
+			// document
+			boolean value = checkIfPhrasesPresent(documentToBeCheckedForPhrases._docid, phrases);
+			if (!value) {
 				documentToBeCheckedForPhrases = nextDocToken(new Query(tokens.toString()), docid);
 				continue;
-			}
-			else {
+			} else {
 				return documentToBeCheckedForPhrases;
 			}
-		}	
-		//	 First find out the smallest list among the list of all the words
-		//		String smallestListWord = findWordWithSmallestList();
-		//		
-		//	 Now take a next docId form the list of the smallestListWord
-		//		WordAttribute_WordOccurrences smallestWordAttribute_WordOccurrences = wordMap.get(smallestListWord);
-		//		LinkedHashMap<Integer, ArrayList<Integer>> smallestMap = smallestWordAttribute_WordOccurrences.getList();
-		//		
-		//	 Find the position of docid in the smallestListWord
-		//		ArrayList<Integer> positions = smallestMap.get(docid);		
+		}
+		// First find out the smallest list among the list of all the words
+		// String smallestListWord = findWordWithSmallestList();
+		//
+		// Now take a next docId form the list of the smallestListWord
+		// WordAttribute_WordOccurrences smallestWordAttribute_WordOccurrences =
+		// wordMap.get(smallestListWord);
+		// LinkedHashMap<Integer, ArrayList<Integer>> smallestMap =
+		// smallestWordAttribute_WordOccurrences.getList();
+		//
+		// Find the position of docid in the smallestListWord
+		// ArrayList<Integer> positions = smallestMap.get(docid);
 
 		return null;
 	}
 
-
 	private boolean checkIfPhrasesPresent(int docid, List<String> phrases) {
-		for(String str : phrases) {
-			boolean value = isPhrasePresent(str,docid);
-			if(value) {
+		for (String str : phrases) {
+			boolean value = isPhrasePresent(str, docid);
+			if (value) {
 				continue;
-			}
-			else {
+			} else {
 				return false;
 			}
 		}
-		return true;	  
+		return true;
 	}
 
 	/**
 	 * 
 	 * Checks if the particular phrase is present in the docid
+	 * 
 	 * @param str
 	 * @param docid
 	 * @return
@@ -484,70 +483,67 @@ public class IndexerInvertedOccurrence extends Indexer {
 		LinkedHashMap<Integer, ArrayList<Integer>> map = currentWordAttribute_WordOccurrences.getList();
 		List<Integer> list = map.get(docid);
 		boolean flag = false;
-		for(int position : list) {
+		for (int position : list) {
 			flag = false;
-			int currentPositon = position+1;
-			for(int j=1;j<phrase.length;j++) {
-				boolean value = isPresentAtPosition(currentPositon,docid,phrase[j]);
-				if(value) {
+			int currentPositon = position + 1;
+			for (int j = 1; j < phrase.length; j++) {
+				boolean value = isPresentAtPosition(currentPositon, docid, phrase[j]);
+				if (value) {
 					currentPositon++;
-					continue;	  			
-				}
-				else {
+					continue;
+				} else {
 					flag = true;
-					break;	  			
+					break;
 				}
 			}
-			if(!flag) {
+			if (!flag) {
 				return true;
 			}
 		}
 		return false;
 	}
 
-	private boolean isPresentAtPosition(int position, int docid, String string) {	  
+	private boolean isPresentAtPosition(int position, int docid, String string) {
 		WordAttribute_WordOccurrences currentWordAttribute_WordOccurrences = wordMap.get(string);
 		LinkedHashMap<Integer, ArrayList<Integer>> map = currentWordAttribute_WordOccurrences.getList();
 		List<Integer> list = map.get(docid);
 		return list.contains(position);
 	}
 
-
 	private DocumentIndexed nextDocToken(Query query, int docid) {
-		query.processQuery();	
+		query.processQuery();
 
 		// First find out the smallest list among the list of all the words
 		String smallestListWord = findWordWithSmallestList(query);
 
-		//Now take a next docId form the list of the smallestListWord
-		WordAttribute_WordOccurrences smallestWordAttribute_WordOccurrences = wordMap.get(smallestListWord);		
+		// Now take a next docId form the list of the smallestListWord
+		WordAttribute_WordOccurrences smallestWordAttribute_WordOccurrences = wordMap.get(smallestListWord);
 		LinkedHashMap<Integer, ArrayList<Integer>> smallestMap = smallestWordAttribute_WordOccurrences.getList();
-		
+
 		// if docid is -1 then make docid=0
 		if (docid == -1) {
 			Iterator<Integer> iterator = smallestMap.keySet().iterator();
-			docid = iterator.next();			
+			docid = iterator.next();
 		}
 
-		//Now we iterate through the map and after we reach the docid given
-		//From the next docid we will have to call isPresentInAll for the query
-		//SImilar to the function written in IndexerInvertedDoconly.java
+		// Now we iterate through the map and after we reach the docid given
+		// From the next docid we will have to call isPresentInAll for the query
+		// SImilar to the function written in IndexerInvertedDoconly.java
 
-		for(Map.Entry<Integer, ArrayList<Integer>> currentMap : smallestMap.entrySet()) {
-			int currentDocId = currentMap.getKey(); 
-			if(currentDocId <= docid) {
-				continue;				
+		for (Map.Entry<Integer, ArrayList<Integer>> currentMap : smallestMap.entrySet()) {
+			int currentDocId = currentMap.getKey();
+			if (currentDocId <= docid) {
+				continue;
 			}
 			boolean value = isPresentInAll(currentDocId, smallestListWord, query);
 			if (value == true) {
 				return docMap.get(currentDocId);
-			}			
+			}
 		}
 		return null;
 	}
 
-	private boolean isPresentInAll(int docid, String originalWord,
-			Query query) {
+	private boolean isPresentInAll(int docid, String originalWord, Query query) {
 		for (String str : query._tokens) {
 			if (str == originalWord) {
 				continue;
@@ -557,23 +553,24 @@ public class IndexerInvertedOccurrence extends Indexer {
 				return false;
 			}
 		}
-		return true;	  
+		return true;
 	}
 
 	private boolean searchForIdInWordList(String str, int docid) {
-		//Now since we have a map we cn esily verify if the word is present in a document		
+		// Now since we have a map we cn esily verify if the word is present in
+		// a document
 		WordAttribute_WordOccurrences currentWordAttribute_WordOccurrences = wordMap.get(str);
 		LinkedHashMap<Integer, ArrayList<Integer>> currentMap = currentWordAttribute_WordOccurrences.getList();
-		return currentMap.containsKey(docid);  
+		return currentMap.containsKey(docid);
 	}
 
 	private String findWordWithSmallestList(Query query) {
 		int minListLength = Integer.MAX_VALUE;
 		String smallestListWord = "";
-		for(String strTemp : query._tokens) {
+		for (String strTemp : query._tokens) {
 			WordAttribute_WordOccurrences currentWordAttribute_WordOccurrences = wordMap.get(strTemp);
 			int mapSize = currentWordAttribute_WordOccurrences.getList().size();
-			if(minListLength > mapSize) {
+			if (minListLength > mapSize) {
 				minListLength = mapSize;
 				smallestListWord = strTemp;
 			}
@@ -617,9 +614,7 @@ public class IndexerInvertedOccurrence extends Indexer {
 		return (int) wordMap.get(term).getFreq();
 	}
 
-
-
-	private boolean loadInCache(String term) throws IOException{
+	private boolean loadInCache(String term) throws IOException {
 		if (wordMap.containsKey(term))
 			return false;
 
@@ -658,7 +653,7 @@ public class IndexerInvertedOccurrence extends Indexer {
 			wa.setList(currMap);
 			wordMap.put(key, wa);
 			flag = true;
-		
+
 		}
 		ois.close();
 		return flag;
@@ -678,7 +673,7 @@ public class IndexerInvertedOccurrence extends Indexer {
 		int output = doc.getWordFrequencyOf(term);
 		return output;
 	}
-	
+
 	private void loadDocInCache(int did) throws IOException {
 		if (docMap.containsKey(did))
 			return;
@@ -727,6 +722,7 @@ public class IndexerInvertedOccurrence extends Indexer {
 		}
 		ois.close();
 	}
+
 	private boolean loadInCache(String word, Query query) throws IOException {
 		if (wordMap.containsKey(word))
 			return true;
@@ -766,7 +762,6 @@ public class IndexerInvertedOccurrence extends Indexer {
 				i++;
 				int fr = Integer.parseInt(eachLine[i]);
 				i++;
-				int l = 0;
 				ArrayList<Integer> list = new ArrayList<Integer>();
 				while (k < fr) {
 					list.add(Integer.parseInt(eachLine[i]));
@@ -778,7 +773,7 @@ public class IndexerInvertedOccurrence extends Indexer {
 			wa.setList(currMap);
 			wordMap.put(key, wa);
 			flag = true;
-		
+
 		}
 		ois.close();
 		return flag;
