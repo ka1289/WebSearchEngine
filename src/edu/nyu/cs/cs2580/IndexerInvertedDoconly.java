@@ -673,6 +673,7 @@ public class IndexerInvertedDoconly extends Indexer {
 				e.printStackTrace();
 			}
 		}
+		
 		DocumentIndexed doc = docMap.get(did);
 		int output = doc.getWordFrequencyOf(term);
 		return output;
