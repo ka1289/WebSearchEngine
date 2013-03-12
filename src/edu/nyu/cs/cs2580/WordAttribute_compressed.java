@@ -6,7 +6,7 @@ import java.util.LinkedHashMap;
 public class WordAttribute_compressed {
 
 	private LinkedHashMap<Integer, ArrayList<ArrayList<Byte>>> list = new LinkedHashMap<Integer, ArrayList<ArrayList<Byte>>>();
-	private int freq;
+	private int freq = 0;
 
 	public LinkedHashMap<Integer, ArrayList<ArrayList<Byte>>> getList() {
 		return list;

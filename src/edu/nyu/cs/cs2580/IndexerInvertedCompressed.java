@@ -10,6 +10,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -96,10 +97,13 @@ public class IndexerInvertedCompressed extends Indexer {
 			while (((o = ois.readLine()) != null)) {
 				String[] eachLine = o.split("\t");
 				String key = eachLine[0];
-
+				System.out.println("---" + key + "---");
+				System.out.println(file.getName());
 				if (wordMap.containsKey(key)) {
 					WordAttribute_compressed wa1 = wordMap.get(key);
-					wa1.setFreq(Integer.parseInt(eachLine[eachLine.length - 1]) + wa1.getFreq());
+					int temp_freq = decode(getList(eachLine[eachLine.length - 1].getBytes()));
+
+					wa1.setFreq(temp_freq + wa1.getFreq());
 
 					HashMap<Integer, ArrayList<ArrayList<Byte>>> currMap = wa1.getList();
 					int i = 1;
@@ -111,6 +115,7 @@ public class IndexerInvertedCompressed extends Indexer {
 						i++;
 						int k = 0;
 						ArrayList<ArrayList<Byte>> list = new ArrayList<ArrayList<Byte>>();
+						System.out.println("once");
 						while (k < fr) {
 							ArrayList<Byte> byteList = getList(eachLine[i].getBytes());
 							list.add(byteList);
@@ -125,19 +130,27 @@ public class IndexerInvertedCompressed extends Indexer {
 					}
 				} else {
 					WordAttribute_compressed wa = new WordAttribute_compressed();
-					wa.setFreq(Integer.parseInt(eachLine[eachLine.length - 1]));
+					int temp_freq = decode(getList(eachLine[eachLine.length - 1].getBytes()));
+					wa.setFreq(temp_freq);
 					LinkedHashMap<Integer, ArrayList<ArrayList<Byte>>> currMap = new LinkedHashMap<Integer, ArrayList<ArrayList<Byte>>>();
 
 					int i = 1;
+					for(int j=1;j<eachLine.length;j++) {
+						System.out.print(Arrays.toString(eachLine[j].getBytes()) + " ");
+					}
+					System.out.println();
 					while (i < eachLine.length - 1) {
 						ArrayList<Byte> temp = getList(eachLine[i].getBytes());
 						int did = decode(temp);
 						i++;
 						int fr = decode(getList(eachLine[i].getBytes()));
+						System.out.println("length " + eachLine.length);
+						System.out.println("key --" + key + "-- fr " + fr);
 						i++;
 						int k = 0;
 						ArrayList<ArrayList<Byte>> list = new ArrayList<ArrayList<Byte>>();
 						while (k < fr) {
+							System.out.println(i);
 							ArrayList<Byte> byteList = getList(eachLine[i].getBytes());
 							list.add(byteList);
 							k++;
@@ -150,12 +163,12 @@ public class IndexerInvertedCompressed extends Indexer {
 					wordMap.put(key, wa);
 				}
 			}
-			
+
 			String s = file.getName().split("_")[0];
 
 			FileOutputStream fos = new FileOutputStream(new File(s.toString()), true);
 			DataOutputStream oos = new DataOutputStream(fos);
-			
+
 			for (String si : wordMap.keySet()) {
 				oos.writeBytes(si);
 				oos.writeBytes("\t");
@@ -164,13 +177,13 @@ public class IndexerInvertedCompressed extends Indexer {
 				for (int docid : temp_map.keySet()) {
 					ArrayList<Byte> docid_bytes = encode(docid);
 					writeByte(docid_bytes, oos);
-					for (Byte b : docid_bytes) {
-						oos.writeByte(b);
-					}
+					// for (Byte b : docid_bytes) {
+					// oos.writeByte(b);
+					// }
 					oos.writeBytes("\t");
 
 					ArrayList<ArrayList<Byte>> temp_occr = temp_map.get(docid);
-					int len = temp_map.size();
+					int len = temp_occr.size();
 					ArrayList<Byte> len_bytes = encode(len);
 					writeByte(len_bytes, oos);
 					oos.writeBytes("\t");
@@ -179,16 +192,18 @@ public class IndexerInvertedCompressed extends Indexer {
 						writeByte(eachOccr, oos);
 						oos.writeBytes("\t");
 					}
-					int freq = temp_attr.getFreq();
-					ArrayList<Byte> freqEncoded = encode(freq);
-					writeByte(freqEncoded, oos);
-					oos.writeBytes("\n");
+					
 				}
+				int freq = temp_attr.getFreq();
+				ArrayList<Byte> freqEncoded = encode(freq);
+				writeByte(freqEncoded, oos);
+				oos.writeBytes("\n");
 			}
 			oos.close();
 			ois.close();
 			file.delete();
 		}
+		wordMap.clear();
 	}
 
 	private ArrayList<Byte> getList(byte[] bs) {
@@ -223,28 +238,33 @@ public class IndexerInvertedCompressed extends Indexer {
 				WordAttribute_compressed temp_attr = attr.get(s);
 				LinkedHashMap<Integer, ArrayList<ArrayList<Byte>>> temp_map = temp_attr.getList();
 				for (int docid : temp_map.keySet()) {
+					ArrayList<ArrayList<Byte>> temp_occr = temp_map.get(docid);
+					int len = temp_occr.size();
+					
+					if(len == 0)
+						continue;
+					
 					ArrayList<Byte> docid_bytes = encode(docid);
 					writeByte(docid_bytes, oos);
-					for (Byte b : docid_bytes) {
-						oos.writeByte(b);
-					}
+					// for (Byte b : docid_bytes) {
+					// oos.writeByte(b);
+					// }
 					oos.writeBytes("\t");
 
-					ArrayList<ArrayList<Byte>> temp_occr = temp_map.get(docid);
-					int len = temp_map.size();
 					ArrayList<Byte> len_bytes = encode(len);
 					writeByte(len_bytes, oos);
 					oos.writeBytes("\t");
 
-					for (ArrayList<Byte> eachOccr : temp_occr) {
-						writeByte(eachOccr, oos);
+					for (int h=0;h<temp_occr.size();h++) {
+						writeByte(temp_occr.get(h), oos);
 						oos.writeBytes("\t");
 					}
-					int freq = temp_attr.getFreq();
-					ArrayList<Byte> freqEncoded = encode(freq);
-					writeByte(freqEncoded, oos);
-					oos.writeBytes("\n");
+					
 				}
+				int freq = temp_attr.getFreq();
+				ArrayList<Byte> freqEncoded = encode(freq);
+				writeByte(freqEncoded, oos);
+				oos.writeBytes("\n");
 			}
 			oos.close();
 		}
@@ -282,8 +302,8 @@ public class IndexerInvertedCompressed extends Indexer {
 		List<String> words = tokenize(analyzer.tokenStream("", new StringReader(newFile)));
 		int i = 0;
 		for (String word : words) {
-			String stemmed = Stemmer.stemAWord(word);
-			if (stemmed.matches("[A-Za-z0-9\\p{Punct}\\s]+")) {
+			String stemmed = Stemmer.stemAWord(word).trim();
+			if (stemmed.matches("[A-Za-z0-9]+")) {
 				int hash = Math.abs(stemmed.hashCode()) % 199;
 				HashMap<String, WordAttribute_compressed> currMap = mapOfMaps[hash];
 
@@ -307,18 +327,21 @@ public class IndexerInvertedCompressed extends Indexer {
 					delta = i - delta;
 					ArrayList<Byte> temp_deltaDocid = encode(delta);
 					listOfDocid.add(temp_deltaDocid);
-
+					currMapMap.remove(index);
+					currMapMap.put(index, listOfDocid);
 				} else {
 					ArrayList<Byte> temp_deltaDocid = encode(i);
 					ArrayList<ArrayList<Byte>> listOfDocid = new ArrayList<ArrayList<Byte>>();
 					listOfDocid.add(temp_deltaDocid);
 					currMapMap.put(index, listOfDocid);
 				}
+				
 				int freq = currWordAttr.getFreq();
 				freq++;
 				currWordAttr.setFreq(freq);
+				i++;
 			}
-			i++;
+			
 		}
 		analyzer.close();
 		docIndexed.setTotalWords(words.size());
