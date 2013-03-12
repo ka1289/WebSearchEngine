@@ -11,8 +11,8 @@ import edu.nyu.cs.cs2580.SearchEngine.Options;
  * @CS2580: Implement this class for HW2.
  */
 public class IndexerInvertedCompressed extends Indexer {
-	private HashMap<String, WordAttribute_WordOccurrences>[] mapOfMaps;
-	private Map<String, WordAttribute_WordOccurrences> wordMap = new HashMap<String, WordAttribute_WordOccurrences>();
+	private HashMap<String, WordAttribute_compressed>[] mapOfMaps;
+	private Map<String, WordAttribute_compressed> wordMap = new HashMap<String, WordAttribute_compressed>();
 	private Map<Integer, DocumentIndexed> docMap = new HashMap<Integer, DocumentIndexed>();
 
 	public IndexerInvertedCompressed(Options options) {
@@ -50,9 +50,9 @@ public class IndexerInvertedCompressed extends Indexer {
 
 	@SuppressWarnings("unchecked")
 	private void initializeMap() {
-		mapOfMaps = (HashMap<String, WordAttribute_WordOccurrences>[]) new HashMap[199];
+		mapOfMaps = (HashMap<String, WordAttribute_compressed>[]) new HashMap[199];
 		for (int j = 0; j < 199; j++) {
-			mapOfMaps[j] = new HashMap<String, WordAttribute_WordOccurrences>();
+			mapOfMaps[j] = new HashMap<String, WordAttribute_compressed>();
 		}
 	}
 	
