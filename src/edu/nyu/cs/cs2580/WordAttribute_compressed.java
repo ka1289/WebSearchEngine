@@ -5,14 +5,14 @@ import java.util.LinkedHashMap;
 
 public class WordAttribute_compressed {
 
-	private LinkedHashMap<Integer, ArrayList<Byte>> list = new LinkedHashMap<Integer, ArrayList<Byte>>();
+	private LinkedHashMap<Integer, ArrayList<ArrayList<Byte>>> list = new LinkedHashMap<Integer, ArrayList<ArrayList<Byte>>>();
 	private long freq;
 
-	public LinkedHashMap<Integer, ArrayList<Byte>> getList() {
+	public LinkedHashMap<Integer, ArrayList<ArrayList<Byte>>> getList() {
 		return list;
 	}
 
-	public void setList(LinkedHashMap<Integer, ArrayList<Byte>> list) {
+	public void setList(LinkedHashMap<Integer, ArrayList<ArrayList<Byte>>> list) {
 		this.list = list;
 	}
 
