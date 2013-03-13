@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -17,6 +16,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
@@ -182,36 +182,28 @@ public class IndexerInvertedCompressed extends Indexer {
 
 			String s = file.getName().split("_")[0];
 
-			FileOutputStream fos = new FileOutputStream(new File(_options._indexPrefix + "/" + s + ".csv"), true);
-			DataOutputStream oos = new DataOutputStream(fos);
-
+			BufferedWriter oos = new BufferedWriter(new FileWriter(_options._indexPrefix + "/" + s + ".csv" , true));
+			
 			for (String si : wordMap.keySet()) {
-				oos.writeBytes(si);
-				oos.writeBytes("\t");
+				oos.write(si + "\t");
 				WordAttribute_compressed temp_attr = wordMap.get(si);
 				LinkedHashMap<Integer, ArrayList<ArrayList<Byte>>> temp_map = temp_attr.getList();
 				for (int docid : temp_map.keySet()) {
-					ArrayList<Byte> docid_bytes = encode(docid);
-					writeByte(docid_bytes, oos);
-					oos.writeBytes("\t");
+					oos.write(CompressionUtility.encodeByteAlign(docid));
 
 					ArrayList<ArrayList<Byte>> temp_occr = temp_map.get(docid);
-					int len = temp_occr.size();
-					ArrayList<Byte> len_bytes = encode(len);
-					writeByte(len_bytes, oos);
-					oos.writeBytes("\t");
+//					int len = temp_occr.size();
+//					oos.write(CompressionUtility.encodeByteAlign(len) +"\t");
 
 					for (ArrayList<Byte> eachOccr : temp_occr) {
-						writeByte(eachOccr, oos);
-						oos.writeBytes("\t");
+						oos.write(CompressionUtility.encodeByteAlign(decode(eachOccr)));
 					}
-
+					
+					oos.write("\t");
 				}
 				int freq = temp_attr.getFreq();
-				ArrayList<Byte> freqEncoded = encode(freq);
-				writeByte(freqEncoded, oos);
-				oos.writeBytes("");
-				oos.writeBytes("\n");
+				oos.write(CompressionUtility.encodeByteAlign(freq) +"");
+				oos.newLine();
 			}
 			oos.close();
 			ois.close();
@@ -449,33 +441,45 @@ public class IndexerInvertedCompressed extends Indexer {
 			String word = eachLine[0];
 			WordAttribute_WordOccurrences wordAttribute_WordOccurrences = new WordAttribute_WordOccurrences();
 			// get the frequency for the words
-			wordAttribute_WordOccurrences.setFreq(toInteger(eachLine[eachLine.length - 1]));
+			char[] tempCH = eachLine[eachLine.length-1].toCharArray();
+			Vector<Character> tempVectorArray = new Vector<Character>();
+			for(char c : tempCH)
+				tempVectorArray.add(c);
+			
+			int freq = DecompressionUtility.decodeByteAlign(tempVectorArray).get(0);
+			wordAttribute_WordOccurrences.setFreq(freq);
 			LinkedHashMap<Integer, ArrayList<Integer>> currMap = new LinkedHashMap<Integer, ArrayList<Integer>>();
-			System.out.print(word + " ");
-			for (int k = 1; k < eachLine.length; k++)
-				System.out.print(toInteger(eachLine[k]) + " ");
 			
-			if(word.equals("bern"))
-				continue;
+//			System.out.print(word + " ");
+//			for (int k = 1; k < eachLine.length; k++)
+//				System.out.print(toInteger(eachLine[k]) + " ");
+//			
+//			if(word.equals("bern"))
+//				continue;
+//			System.out.println();
 			
-			System.out.println();
 			int i = 1;
 			while (i < eachLine.length - 1) {
-				int did = (int) toInteger(eachLine[i]);
-				i++;
-				int frequencyInDoc = (int) toInteger(eachLine[i]);
-				i++;
-				int k = 0;
+				char[] temp_char = eachLine[i].toCharArray();
+				Vector<Character> tempVectorArray_char = new Vector<Character>();
+				for(char c : temp_char)
+					tempVectorArray_char.add(c);
+				
+				List<Integer> tempList = DecompressionUtility.decodeByteAlign(tempVectorArray_char);
+				int did = tempList.get(0);
+				
+				int frequencyInDoc = tempList.size();
+				int k = 1;
 				int prev = 0;
 				ArrayList<Integer> list = new ArrayList<Integer>();
 				while (k < frequencyInDoc) {
-					int temp = (int) toInteger(eachLine[i]);
+					int temp = tempList.get(k);
 					list.add(temp + prev);
 					prev = temp;
 					k++;
-					i++;
 				}
 				currMap.put(did, list);
+				i++;
 			}
 			wordAttribute_WordOccurrences.setList(currMap);
 			wordMapUncompressed.put(word, wordAttribute_WordOccurrences);

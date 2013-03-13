@@ -8,16 +8,15 @@ public class CompressionUtility {
 	 * CompressionUtility(); System.out.println(cu.encodeByteAlign(0)); }
 	 */
 
-	public String encodeByteAlign(int number) {
-		CompressionUtility cu = new CompressionUtility();
-		return cu.binaryToHex(cu.appendAdditionalZeroOrOne(cu.appendZeros(cu.convertToBinary(number))));
+	public static String encodeByteAlign(int number) {
+		return binaryToHex(appendAdditionalZeroOrOne(appendZeros(convertToBinary(number))));
 	}
 
-	public String convertToBinary(int num) {
+	public static String convertToBinary(int num) {
 		return Integer.toBinaryString(num);
 	}
 
-	public String appendZeros(String binaryNum) {
+	public static String appendZeros(String binaryNum) {
 		int len = binaryNum.length();
 		if (len % 7 == 0) {
 			return binaryNum;
@@ -33,7 +32,7 @@ public class CompressionUtility {
 		}
 	}
 
-	public String appendAdditionalZeroOrOne(String binaryNum) {
+	public static String appendAdditionalZeroOrOne(String binaryNum) {
 		StringBuffer sb = new StringBuffer();
 		int current = 0;
 		while (current < binaryNum.length()) {
@@ -50,7 +49,7 @@ public class CompressionUtility {
 		return sb.toString();
 	}
 
-	public String binaryToHex(String binaryNum) {
+	public static String binaryToHex(String binaryNum) {
 		StringBuffer result = new StringBuffer();
 		StringBuffer temp;
 		int current = 0;

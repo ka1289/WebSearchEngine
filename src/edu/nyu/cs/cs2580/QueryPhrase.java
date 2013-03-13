@@ -66,7 +66,8 @@ public class QueryPhrase extends Query {
 		}
 		String tempStr = str.substring(index, str.length());
 		String stemmedWord = Stemmer.stemAWord(tempStr.trim());
-		_tokens.add(stemmedWord);
+		//_tokens.add(stemmedWord);
+		processQuery(stemmedWord);
 	}
 
 	private void processQuery(String _query) {

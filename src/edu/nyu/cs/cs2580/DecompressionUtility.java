@@ -29,7 +29,7 @@ public class DecompressionUtility {
 		}
 	}
 	
-	public Vector<Integer> decodeByteAlign(Vector<Character> encodedList) {
+	public static Vector<Integer> decodeByteAlign(Vector<Character> encodedList) {
 		
 		if(encodedList == null || encodedList.size() == 0)
 			return null;
@@ -63,7 +63,7 @@ public class DecompressionUtility {
 		return listOfDecimalNos;
 	}
 	
-	public String hexToBinaryBlockOf4(char hexChar) {
+	public static String hexToBinaryBlockOf4(char hexChar) {
 		if(hexChar == '0')
 			return "0000";
 		else if(hexChar == '1')
