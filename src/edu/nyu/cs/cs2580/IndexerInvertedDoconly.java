@@ -4,21 +4,18 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.io.comparator.SizeFileComparator;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
@@ -34,6 +31,7 @@ public class IndexerInvertedDoconly extends Indexer {
 	private Map<String, HashMap<String, WordAttribute>> mapOfMaps;
 	private Map<Integer, DocumentIndexed> docMap = new HashMap<Integer, DocumentIndexed>();
 	private Map<String, WordAttribute> wordMap = new HashMap<String, WordAttribute>();
+	private int totalNoOfFiles = 0;
 
 	public IndexerInvertedDoconly(Options options) {
 		super(options);
@@ -57,13 +55,14 @@ public class IndexerInvertedDoconly extends Indexer {
 	public void constructIndex() throws IOException {
 		File corpusDir = new File(_options._corpusPrefix);
 		File[] listOfFiles = corpusDir.listFiles();
-		int noOfFiles = listOfFiles.length;
+		totalNoOfFiles = listOfFiles.length;
 
 		int i = 0;
 		int index = 1;
 		initializeMap();
 		for (File eachFile : listOfFiles) {
-			if (i >= noOfFiles / 5) {
+			System.out.println(i);
+			if (i >= totalNoOfFiles / 5) {
 				serialize();
 				mapOfMaps = null;
 				i = 0;
@@ -92,7 +91,7 @@ public class IndexerInvertedDoconly extends Indexer {
 
 		indexedFiles = indexDir.listFiles();
 		for (File file : indexedFiles) {
-			if (file.getName().equals(".DS_Store") || file.getName().equals("doc_map.ser"))
+			if (file.getName().equals(".DS_Store") || file.getName().equals("doc_map.csv"))
 				continue;
 			BufferedReader ois = new BufferedReader(new FileReader(file.getAbsoluteFile()));
 			String o;
@@ -262,10 +261,6 @@ public class IndexerInvertedDoconly extends Indexer {
 		File[] indexedFiles = indexDir.listFiles();
 		int i = 0;
 
-		// list of all the files in index directory
-		indexedFiles = indexDir.listFiles();
-		// indexed files will be sorted in reverse size
-		Arrays.sort(indexedFiles, SizeFileComparator.SIZE_REVERSE);
 		for (File file : indexedFiles) {
 			if (file.getName().equals(".DS_Store"))
 				continue;
@@ -413,7 +408,6 @@ public class IndexerInvertedDoconly extends Indexer {
 		ois.close();
 	}
 
-
 	/**
 	 * In HW2, you should be using {@link DocumentIndexed}
 	 */
@@ -463,27 +457,19 @@ public class IndexerInvertedDoconly extends Indexer {
 			}
 
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			// TODO
 			e.printStackTrace();
 		}
 		return null;
 	}
 
-	/**
-	 * Checks if the current docid contains all the words of the query
-	 * @param docid
-	 * @param originalWord
-	 * @param query
-	 * @return
-	 * @throws IOException
-	 */
 	private boolean isPresentInAll(int docid, String originalWord, Query query) throws IOException {
 		ArrayList<String> tokens = new ArrayList<String>();
 		for (String s : query._tokens) {
 			boolean flag = false;
 			if (!isPresentInCache(s)) {
 				flag = loadInCache(s);
-				if (!flag)
+				if (flag)
 					tokens.add(s);
 			}
 		}
@@ -540,8 +526,8 @@ public class IndexerInvertedDoconly extends Indexer {
 		for (String strTemp : query._tokens) {
 			boolean flag = false;
 			if (!isPresentInCache(strTemp)) {
-				flag = loadInCache(strTemp);
-				if (flag == true)
+				flag = loadInCache(strTemp, query);
+				if (flag == false)
 					continue;
 			}
 			WordAttribute currWordAttribute = wordMap.get(strTemp);
@@ -610,7 +596,6 @@ public class IndexerInvertedDoconly extends Indexer {
 		if (wordMap.containsKey(word))
 			return false;
 
-
 		boolean flag = false;
 		String firstLetter = word.substring(0, 1);
 		List<String> commands = new ArrayList<String>();
@@ -648,10 +633,11 @@ public class IndexerInvertedDoconly extends Indexer {
 		if (!isPresentInCache(term)) {
 			try {
 				flag = loadInCache(term);
-				if (flag == true)
+				if (flag == false)
 					return 0;
 			} catch (IOException e) {
 				// TODO
+				e.printStackTrace();
 			}
 		}
 		return wordMap.get(term).getList().size();
@@ -663,10 +649,11 @@ public class IndexerInvertedDoconly extends Indexer {
 		if (!isPresentInCache(term)) {
 			try {
 				flag = loadInCache(term);
-				if (flag == true)
+				if (flag == false)
 					return 0;
 			} catch (IOException e) {
 				// TODO
+				e.printStackTrace();
 			}
 		}
 		return (int) wordMap.get(term).getFreq();
@@ -682,7 +669,6 @@ public class IndexerInvertedDoconly extends Indexer {
 				e.printStackTrace();
 			}
 		}
-		
 		DocumentIndexed doc = docMap.get(did);
 		int output = doc.getWordFrequencyOf(term);
 		return output;
