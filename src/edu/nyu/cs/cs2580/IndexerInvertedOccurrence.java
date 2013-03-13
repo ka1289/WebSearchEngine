@@ -182,11 +182,7 @@ public class IndexerInvertedOccurrence extends Indexer {
 		for (int doc : docMap.keySet()) {
 			aoos.write(doc + "\t");
 			DocumentIndexed docIndexed = docMap.get(doc);
-			aoos.write(docIndexed.getTitle() + "\t" + docIndexed.getUrl() + "\t");
-			HashMap<String, Integer> wordFreq = docIndexed.getWordFrequency();
-			for (String s : wordFreq.keySet()) {
-				aoos.write(s + "\t" + wordFreq.get(s) + "\t");
-			}
+			aoos.write(docIndexed.getTitle() + "\t" + docIndexed.getUrl() + "\t");			
 			aoos.write(docIndexed.getTotalWords() + "");
 			aoos.newLine();
 		}
@@ -360,23 +356,11 @@ public class IndexerInvertedOccurrence extends Indexer {
 			}
 			DocumentIndexed wa = new DocumentIndexed(did);
 			String title = eachLine[1];
-			String url = eachLine[2];
-
-			int i = 3;
-			HashMap<String, Integer> wordFreq = new HashMap<String, Integer>();
-
-			while (i < eachLine.length - 1) {
-				String word = eachLine[i];
-				i++;
-				int freq = Integer.parseInt(eachLine[i]);
-				wordFreq.put(word, freq);
-				i++;
-			}
+			String url = eachLine[2];			
 			long totalWords = Integer.parseInt(eachLine[eachLine.length - 1]);
 
 			wa.setTitle(title);
 			wa.setUrl(url);
-			wa.setWordFrequency(wordFreq);
 			wa.setTotalWords(totalWords);
 
 			docMap.put(did, wa);
@@ -555,8 +539,15 @@ public class IndexerInvertedOccurrence extends Indexer {
 		return true;
 	}
 
+	/**
+	 * 
+	 * Verifies if the docid contains the particular string
+	 * @param str
+	 * @param docid
+	 * @return
+	 */
 	private boolean searchForIdInWordList(String str, int docid) {
-		// Now since we have a map we cn esily verify if the word is present in
+		// Now since we have a map we can easily verify if the word is present in
 		// a document
 		WordAttribute_WordOccurrences currentWordAttribute_WordOccurrences = wordMap.get(str);
 		LinkedHashMap<Integer, ArrayList<Integer>> currentMap = currentWordAttribute_WordOccurrences.getList();
@@ -699,22 +690,10 @@ public class IndexerInvertedOccurrence extends Indexer {
 			DocumentIndexed wa = new DocumentIndexed(docid);
 			String title = eachLine[1];
 			String url = eachLine[2];
-
-			int i = 3;
-			HashMap<String, Integer> wordFreq = new HashMap<String, Integer>();
-
-			while (i < eachLine.length - 1) {
-				String word = eachLine[i];
-				i++;
-				int freq = Integer.parseInt(eachLine[i]);
-				wordFreq.put(word, freq);
-				i++;
-			}
 			int totalWords = Integer.parseInt(eachLine[eachLine.length - 1]);
 
 			wa.setTitle(title);
 			wa.setUrl(url);
-			wa.setWordFrequency(wordFreq);
 			wa.setTotalWords(totalWords);
 
 			docMap.put(docid, wa);

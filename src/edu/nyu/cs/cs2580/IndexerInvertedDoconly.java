@@ -469,6 +469,14 @@ public class IndexerInvertedDoconly extends Indexer {
 		return null;
 	}
 
+	/**
+	 * Checks if the current docid contains all the words of the query
+	 * @param docid
+	 * @param originalWord
+	 * @param query
+	 * @return
+	 * @throws IOException
+	 */
 	private boolean isPresentInAll(int docid, String originalWord, Query query) throws IOException {
 		ArrayList<String> tokens = new ArrayList<String>();
 		for (String s : query._tokens) {
